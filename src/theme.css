@@ -1,0 +1,161 @@
+/* AMPWATCH Design Tokens & Theme Stylesheet */
+
+:root {
+  /* Color Tokens (Section 5) */
+  --color-bg: #0B0E13;
+  --color-panel: #131822;
+  --color-hairline: #232B38;
+  --color-text: #E7ECF3;
+  --color-muted: #7C8798;
+  --color-green: #2FD98C;
+  --color-amber: #F2AE3D;
+  --color-red: #FF4D5E;
+  --color-blue: #3E8EFF;
+
+  /* Semantics */
+  --color-status-normal: var(--color-green);
+  --color-status-warning: var(--color-amber);
+  --color-status-critical: var(--color-red);
+  --color-brand: var(--color-blue);
+
+  /* Fonts (Section 5) */
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  /* Scrollbars */
+  scrollbar-color: var(--color-hairline) var(--color-bg);
+  scrollbar-width: thin;
+}
+
+/* Reset and base element styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  margin-top: 0;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+/* JetBrains Mono for numbers, code, telemetry data */
+code, pre, .telemetry, .number, .timestamp, .mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1; /* Tabular figures for alignment */
+}
+
+/* Custom scrollbars for WebKit */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-hairline);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* Interactive Elements Focus */
+button:focus-visible, 
+a:focus-visible, 
+input:focus-visible, 
+select:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+/* Glassmorphism panel styling */
+.panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  padding: var(--spacing-lg);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 77, 94, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(255, 77, 94, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 77, 94, 0);
+  }
+}
+
+.pulse-critical {
+  animation: pulse 2s infinite;
+  border-radius: 50%;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
