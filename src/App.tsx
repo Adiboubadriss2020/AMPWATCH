@@ -174,13 +174,13 @@ function App() {
           boxSizing: 'border-box',
         }}
       >
-        {/* Left Column: Fleet List (Section 2.1) */}
+        {/* Left Column: Fleet List (Section 2.1) & Live Activity Journal */}
         <section 
           id="fleet-list"
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.5rem'
+            gap: '0.75rem'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
@@ -194,8 +194,7 @@ function App() {
             style={{
               display: 'flex',
               flexDirection: 'column',
-              overflowY: 'auto',
-              maxHeight: 'calc(100vh - 160px)',
+              gap: '0.5rem',
               paddingRight: '0.25rem'
             }}
           >
@@ -208,6 +207,11 @@ function App() {
               />
             ))}
           </div>
+
+          <EventLog 
+            events={events} 
+            onConfirm={handleConfirmEvent} 
+          />
         </section>
 
         {/* Center Column: Telemetry Hero Chart & Live Log (Section 2.1) */}
@@ -226,11 +230,6 @@ function App() {
               anomalyIndex={activeHistory.anomaly_index}
             />
           )}
-
-          <EventLog 
-            events={events} 
-            onConfirm={handleConfirmEvent} 
-          />
         </section>
 
         {/* Right Column: Impact KPIs (Section 2.1 & 3.5) */}
