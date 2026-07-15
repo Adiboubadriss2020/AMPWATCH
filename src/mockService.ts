@@ -12,50 +12,6 @@ const MACHINE_TEMPLATES = [
     baseTemp: 24.8,
     basePression: 1013.4,
     baseHumidite: 55.2,
-  },
-  {
-    machineId: 'PRESS-04',
-    machineName: 'Presse Stamping 4',
-    normalKw: 40,
-    scenario: 'SURCHAUFFE',
-    anomalyType: 'EFFORT_MECANIQUE',
-    cause: 'Surchauffe moteur par frottement mécanique (palier usé)',
-    baseTemp: 35.2,
-    basePression: 1010.1,
-    baseHumidite: 48.5,
-  },
-  {
-    machineId: 'WELD-01',
-    machineName: 'Sonde Welder 1',
-    normalKw: 25,
-    scenario: 'NOZZLE_OBST',
-    anomalyType: 'OBSTRUCTION_BUSE',
-    cause: 'Buse de soudure partiellement obstruée (surintensité)',
-    baseTemp: 22.1,
-    basePression: 1012.0,
-    baseHumidite: 50.1,
-  },
-  {
-    machineId: 'HVAC-02',
-    machineName: 'Centrale Ventilation 2',
-    normalKw: 15,
-    scenario: 'FILTRE',
-    anomalyType: 'FILTRE_ENCRASSE',
-    cause: 'Filtre à air encrassé entraînant une perte de charge',
-    baseTemp: 19.5,
-    basePression: 998.5,
-    baseHumidite: 60.2,
-  },
-  {
-    machineId: 'CNC-12',
-    machineName: 'Fraiseuse CNC 12',
-    normalKw: 60,
-    scenario: 'POMPE_LUB',
-    anomalyType: 'DEFAUT_LUBRIFICATION',
-    cause: 'Pompe de lubrification en panne, échauffement broche',
-    baseTemp: 28.0,
-    basePression: 1011.5,
-    baseHumidite: 45.3,
   }
 ];
 
@@ -92,13 +48,9 @@ class TelemetrySimulator {
     const now = new Date();
     
     this.machines = MACHINE_TEMPLATES.map((tmpl) => {
-      // CNC-12 starts warning for demo representation
-      const isCNC = tmpl.machineId === 'CNC-12';
-      const status: MachineStatus = isCNC ? 'AVERTISSEMENT' : 'NOMINAL';
+      const status: MachineStatus = 'NOMINAL';
       
-      const kw = isCNC 
-        ? tmpl.normalKw * 1.25 
-        : tmpl.normalKw * (0.95 + Math.random() * 0.1);
+      const kw = tmpl.normalKw * (0.95 + Math.random() * 0.1);
       
       const voltage = 380 + Math.round((Math.random() * 6 - 3) * 10) / 10;
       const powerFactor = 0.85 + Math.random() * 0.08;
@@ -111,13 +63,8 @@ class TelemetrySimulator {
         const timePoint = new Date(now.getTime() - i * 3000);
         const timeStr = this.formatTime(timePoint);
         
-        let ptKw = tmpl.normalKw * (0.95 + Math.random() * 0.1);
-        let ptStatus: MachineStatus = 'NOMINAL';
-        
-        if (isCNC && i < 15) {
-          ptKw = tmpl.normalKw * 1.22 + Math.random() * 3;
-          ptStatus = 'AVERTISSEMENT';
-        }
+        const ptKw = tmpl.normalKw * (0.95 + Math.random() * 0.1);
+        const ptStatus: MachineStatus = 'NOMINAL';
         
         historyList.push({
           t: timeStr,
@@ -134,41 +81,31 @@ class TelemetrySimulator {
         kw: Math.round(kw * 10) / 10,
         current: Math.round(current * 10) / 10,
         voltage: Math.round(voltage),
-        temp: Math.round((isCNC ? tmpl.baseTemp + 8.5 : tmpl.baseTemp + Math.random() * 2) * 10) / 10,
+        temp: Math.round((tmpl.baseTemp + Math.random() * 2) * 10) / 10,
         humidite: Math.round((tmpl.baseHumidite + Math.random() * 4 - 2) * 10) / 10,
-        pression: Math.round((isCNC ? tmpl.basePression - 15 : tmpl.basePression + Math.random() * 6 - 3) * 10) / 10,
+        pression: Math.round((tmpl.basePression + Math.random() * 6 - 3) * 10) / 10,
         powerFactor: Math.round(powerFactor * 100) / 100,
         costPerHour: Math.round(costPerHour * 100) / 100,
         normalKw: tmpl.normalKw,
         scenario: tmpl.scenario,
         status,
-        anomaly: isCNC,
-        anomalyType: isCNC ? tmpl.anomalyType : undefined,
-        cause: isCNC ? tmpl.cause : undefined,
+        anomaly: false,
+        anomalyType: undefined,
+        cause: undefined,
         potRaw: 3000 + Math.round(Math.random() * 300),
         wifi_rssi: -60 + Math.round(Math.random() * 10),
-        relay: isCNC,
-        cooldown_remaining: isCNC ? COOLDOWN_DURATION - 60 : null,
+        relay: false,
+        cooldown_remaining: null,
       };
     });
 
-    // Seed initial events log
-    const cncEventTime = new Date(now.getTime() - 15 * 3000);
-    this.events = [
-      {
-        id: 'evt_init_1',
-        time: this.formatTime(cncEventTime),
-        tag: 'AVERTISSEMENT',
-        machineId: 'CNC-12',
-        message: 'CNC-12: 73.2 kW, 22% above baseline. Pompe de lubrification en panne, échauffement broche. Scenario: POMPE_LUB.',
-        was_real_anomaly: null
-      }
-    ];
+    // Seed initial events log empty
+    this.events = [];
 
-    this.totalAlertsCount = 1;
-    this.nominalSeconds = 5 * 60 * 4;
-    this.totalSeconds = 5 * 60 * 5;
-    this.accumulatedWaste = 12.5;
+    this.totalAlertsCount = 0;
+    this.nominalSeconds = 5 * 60;
+    this.totalSeconds = 5 * 60;
+    this.accumulatedWaste = 0;
 
     this.startSimulation();
     this.startCooldownTimer();
