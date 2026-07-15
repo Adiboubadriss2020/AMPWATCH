@@ -4,6 +4,8 @@ export interface Machine {
   machineId: string;
   machineName: string;
   timestamp: string;
+  date?: string;
+  time?: string;
   kw: number;
   current: number;
   voltage: number;
@@ -13,6 +15,9 @@ export interface Machine {
   powerFactor: number;
   costPerHour: number;
   normalKw: number;
+  deviation?: number;
+  isAnomaly?: boolean;
+  severity?: string;
   scenario: string;
   status: MachineStatus;
   anomaly: boolean;
