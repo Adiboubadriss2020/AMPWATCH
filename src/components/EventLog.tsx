@@ -122,7 +122,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                       Validation Responsable Énergie:
                     </span>
 
-                    {evt.was_real_anomaly === null ? (
+                    {evt.was_real_anomaly == null ? (
                       <>
                         <button
                           onClick={() => onConfirm(evt.id, false)}
