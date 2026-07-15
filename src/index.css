@@ -1,3 +1,8 @@
 @import './theme.css';
 
 /* Custom styling overrides can be placed here if needed */
+
+@keyframes pulse-badge {
+  0%, 100% { box-shadow: 0 0 6px rgba(255, 77, 94, 0.6); transform: scale(1); }
+  50%       { box-shadow: 0 0 14px rgba(255, 77, 94, 0.9); transform: scale(1.15); }
+}

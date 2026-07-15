@@ -51,3 +51,33 @@ export interface KPIs {
   false_alert_rate: number; // percentage (0 - 100)
   fleet_uptime: number; // percentage (0 - 100)
 }
+
+// --- Agent / Webhook Recommendation Payload ---
+
+export interface AgentNode {
+  id: string;
+  type: 'trigger' | 'action' | 'display' | 'agent' | 'agent-llm' | 'utility' | string;
+  data: {
+    name: string;
+    label: string;
+    description: string;
+    parameters?: Record<string, unknown>;
+  };
+}
+
+export interface AgentEdge {
+  id: string;
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+}
+
+export interface AgentRecommendation {
+  id: string;                  // unique per recommendation
+  receivedAt: string;          // ISO timestamp when panel received it
+  machineId: string;           // which machine triggered this
+  nodes: AgentNode[];
+  edges: AgentEdge[];
+  isRead: boolean;
+}
