@@ -60,8 +60,9 @@ function App() {
       if (message.type === 'reading') {
         const updatedMachines = message.payload as Machine[];
         setMachines(updatedMachines);
-        // Recalculate KPIs
+        // Recalculate KPIs and sync event log
         setKpis(mockTelemetryService.getKPIs());
+        setEvents(mockTelemetryService.getRecentEvents());
       } else if (message.type === 'event') {
         // Refresh events and KPIs
         setEvents(mockTelemetryService.getRecentEvents());

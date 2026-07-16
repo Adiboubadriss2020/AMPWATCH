@@ -95,9 +95,30 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                       {evt.machineId}
                     </span>
                   </div>
-                  <span className="timestamp" style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-                    {evt.time}
-                  </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <span className="timestamp" style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+                        {evt.time}
+                      </span>
+                      <a
+                        href="#"
+                        title="Export PDF (Google Docs)"
+                        onClick={(e) => { e.preventDefault(); alert("Feature Ready: Link your Google Docs template to download PDF"); }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          textDecoration: 'none',
+                          color: 'var(--color-red)',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          transition: 'transform 0.15s ease',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.15)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        📕
+                      </a>
+                    </div>
                 </div>
 
                 {/* Message */}
