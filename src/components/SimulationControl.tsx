@@ -53,22 +53,23 @@ export const SimulationControl: React.FC<SimulationControlProps> = ({ machines, 
       <div 
         onClick={() => setIsOpen(!isOpen)}
         style={{
-          height: '32px',
+          height: '30px',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           cursor: 'pointer',
           borderBottom: isOpen ? '1px solid var(--color-hairline)' : 'none',
-          color: 'var(--color-blue)',
-          fontSize: '0.75rem',
+          color: 'var(--color-cyan)',
+          fontSize: '0.68rem',
           fontWeight: 700,
-          letterSpacing: '0.1em',
+          letterSpacing: '0.12em',
           textTransform: 'uppercase',
           userSelect: 'none',
-          backgroundColor: 'var(--color-bg-subtle)',
+          backgroundColor: 'rgba(41,211,240,0.04)',
+          fontFamily: 'var(--font-mono)',
         }}
       >
-        {isOpen ? '▼ HIDE DEMO SIMULATOR CONTROL CONSOLE' : '▲ SHOW DEMO SIMULATOR CONTROL CONSOLE'}
+        {isOpen ? '▼  SIMULATOR CONTROL CONSOLE  ▼' : '▲  SIMULATOR CONTROL CONSOLE  ▲'}
       </div>
 
       {/* Control Body */}
@@ -103,45 +104,66 @@ export const SimulationControl: React.FC<SimulationControlProps> = ({ machines, 
             onClick={() => handleTriggerAnomaly('AVERTISSEMENT')}
             style={{
               padding: '0.35rem 0.75rem',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               backgroundColor: 'var(--color-amber-dim)',
               border: '1px solid var(--color-amber)',
-              borderRadius: '4px',
+              borderRadius: '6px',
               color: 'var(--color-amber)',
-              fontWeight: 600,
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              letterSpacing: '0.04em',
+              cursor: 'pointer',
+              transition: 'box-shadow 0.2s',
+              boxShadow: '0 0 8px rgba(242,184,75,0.2)',
             }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 16px rgba(242,184,75,0.5)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 8px rgba(242,184,75,0.2)')}
           >
-            Inject Warning (+35%)
+            ⚠ Warning (+35%)
           </button>
 
           <button
             onClick={() => handleTriggerAnomaly('CRITIQUE')}
             style={{
               padding: '0.35rem 0.75rem',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               backgroundColor: 'var(--color-red-dim)',
               border: '1px solid var(--color-red)',
-              borderRadius: '4px',
+              borderRadius: '6px',
               color: 'var(--color-red)',
-              fontWeight: 600,
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              letterSpacing: '0.04em',
+              cursor: 'pointer',
+              transition: 'box-shadow 0.2s',
+              boxShadow: '0 0 8px rgba(255,75,75,0.25)',
             }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 18px rgba(255,75,75,0.55)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 8px rgba(255,75,75,0.25)')}
           >
-            Inject Anomaly (+75%)
+            🔴 Critique (+75%)
           </button>
 
           <button
             onClick={handleTriggerNominal}
             style={{
               padding: '0.35rem 0.75rem',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               backgroundColor: 'var(--color-green-dim)',
               border: '1px solid var(--color-green)',
-              borderRadius: '4px',
+              borderRadius: '6px',
               color: 'var(--color-green)',
-              fontWeight: 600,
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              letterSpacing: '0.04em',
+              cursor: 'pointer',
+              transition: 'box-shadow 0.2s',
+              boxShadow: '0 0 8px rgba(63,209,107,0.2)',
             }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 16px rgba(63,209,107,0.5)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 8px rgba(63,209,107,0.2)')}
           >
-            Force Nominal (Clear Fault)
+            ✓ Force Nominal
           </button>
         </div>
 
@@ -157,18 +179,21 @@ export const SimulationControl: React.FC<SimulationControlProps> = ({ machines, 
               onClick={() => handleSpeedChange(s)}
               style={{
                 width: '36px',
-                height: '24px',
+                height: '26px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.75rem',
+                fontSize: '0.72rem',
                 fontFamily: 'var(--font-mono)',
-                backgroundColor: speed === s ? 'var(--color-blue)' : 'var(--color-bg)',
+                backgroundColor: speed === s ? 'var(--color-cyan)' : 'var(--color-bg)',
                 border: '1px solid',
-                borderColor: speed === s ? 'var(--color-blue)' : 'var(--color-hairline)',
-                color: speed === s ? '#0B0E13' : 'var(--color-text)',
+                borderColor: speed === s ? 'var(--color-cyan)' : 'var(--color-hairline)',
+                color: speed === s ? '#050B14' : 'var(--color-text)',
                 borderRadius: '4px',
                 fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: speed === s ? '0 0 8px rgba(41,211,240,0.4)' : 'none',
+                transition: 'all 0.15s',
               }}
             >
               {s}x

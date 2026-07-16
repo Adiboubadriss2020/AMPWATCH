@@ -1,48 +1,97 @@
 import React from 'react';
 import type { KPIs } from '../types';
 
-interface KPIPanelProps {
-  kpis: KPIs;
-}
+interface KPIPanelProps { kpis: KPIs; }
 
-interface KPIRowProps {
+interface GaugeProps {
   label: string;
-  value: string;
+  value: number;
+  max: number;
+  unit: string;
+  color: string;
+  dimColor: string;
+  icon: string;
   sub?: string;
-  accent?: string;
-  rightBadge?: string;
-  badgeColor?: string;
 }
 
-const KPIRow: React.FC<KPIRowProps> = ({ label, value, sub, accent = 'var(--color-text)', rightBadge, badgeColor }) => (
-  <div
-    style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr auto',
+const Gauge: React.FC<GaugeProps> = ({ label, value, max, unit, color, dimColor, icon, sub }) => {
+  const pct = Math.min(100, Math.max(0, (value / max) * 100));
+  const radius = 30;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (pct / 100) * circumference;
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
-      gap: '0.5rem',
-      padding: '0.6rem 0',
-      borderBottom: '1px solid var(--color-border)',
+      gap: '0.35rem',
+      padding: '0.75rem 0.5rem',
+      backgroundColor: 'var(--color-surface)',
+      border: '1px solid var(--color-border)',
+      borderRadius: 'var(--r-lg)',
+      transition: 'border-color 0.2s, box-shadow 0.2s',
     }}
-  >
-    <div>
-      <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-sub)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>
-        {label}
+    onMouseEnter={e => {
+      (e.currentTarget as HTMLDivElement).style.borderColor = color;
+      (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 12px ${dimColor}`;
+    }}
+    onMouseLeave={e => {
+      (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--color-border)';
+      (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
+    }}
+    >
+      {/* Ring */}
+      <div style={{ position: 'relative', width: '72px', height: '72px' }}>
+        <svg width="72" height="72" viewBox="0 0 72 72" style={{ transform: 'rotate(-90deg)' }}>
+          {/* Track */}
+          <circle
+            cx="36" cy="36" r={radius}
+            fill="none"
+            stroke="var(--color-hairline)"
+            strokeWidth="6"
+          />
+          {/* Progress */}
+          <circle
+            cx="36" cy="36" r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 0.6s ease', filter: `drop-shadow(0 0 4px ${color})` }}
+          />
+        </svg>
+        {/* Center content */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: '1px',
+        }}>
+          <span style={{ fontSize: '0.75rem', lineHeight: 1 }}>{icon}</span>
+          <span className="mono" style={{ fontSize: '0.75rem', fontWeight: 700, color, lineHeight: 1 }}>
+            {typeof value === 'number' && value % 1 !== 0 ? value.toFixed(1) : value}
+            <span style={{ fontSize: '0.5rem', fontWeight: 500, color: 'var(--color-text-sub)' }}>{unit}</span>
+          </span>
+        </div>
       </div>
-      {sub && <div style={{ fontSize: '0.625rem', color: 'var(--color-text-dim)', marginTop: '1px' }}>{sub}</div>}
+
+      {/* Label */}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--color-text-sub)', textTransform: 'uppercase', letterSpacing: '0.07em', lineHeight: 1.3 }}>
+          {label}
+        </div>
+        {sub && (
+          <div style={{ fontSize: '0.55rem', color: 'var(--color-text-dim)', marginTop: '2px', lineHeight: 1.2 }}>
+            {sub}
+          </div>
+        )}
+      </div>
     </div>
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
-      <span className="mono" style={{ fontSize: '1rem', fontWeight: 600, color: accent, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
-        {value}
-      </span>
-      {rightBadge && (
-        <span style={{ fontSize: '0.6rem', fontWeight: 600, color: badgeColor ?? 'var(--color-text-dim)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          {rightBadge}
-        </span>
-      )}
-    </div>
-  </div>
-);
+  );
+};
 
 export const KPIPanel: React.FC<KPIPanelProps> = ({ kpis }) => {
   const {
@@ -55,14 +104,68 @@ export const KPIPanel: React.FC<KPIPanelProps> = ({ kpis }) => {
     scoreUsureMoyen,
   } = kpis;
 
-  const scoreColor = scoreUsureMoyen > 80 ? 'var(--color-critical)'
-    : scoreUsureMoyen > 60 ? 'var(--color-warning)'
-    : scoreUsureMoyen > 40 ? 'var(--color-amber)'
-    : 'var(--color-text)';
-
-  const dispoColor = disponibiliteFlotte >= 95 ? 'var(--color-nominal)'
-    : disponibiliteFlotte >= 80 ? 'var(--color-warning)'
-    : 'var(--color-critical)';
+  const gauges: GaugeProps[] = [
+    {
+      label: 'Fleet Uptime',
+      value: disponibiliteFlotte,
+      max: 100,
+      unit: '%',
+      color: disponibiliteFlotte >= 90 ? 'var(--color-green)' : disponibiliteFlotte >= 75 ? 'var(--color-amber)' : 'var(--color-red)',
+      dimColor: disponibiliteFlotte >= 90 ? 'rgba(63,209,107,0.3)' : 'rgba(255,75,75,0.3)',
+      icon: '⚡',
+      sub: 'Normal operation',
+    },
+    {
+      label: 'Anomalies',
+      value: anomaliesSemaine,
+      max: Math.max(10, anomaliesSemaine + 2),
+      unit: '',
+      color: anomaliesSemaine > 0 ? 'var(--color-red)' : 'var(--color-green)',
+      dimColor: 'rgba(255,75,75,0.3)',
+      icon: '🔴',
+      sub: 'Active alerts',
+    },
+    {
+      label: 'Wear Score',
+      value: scoreUsureMoyen,
+      max: 100,
+      unit: '%',
+      color: scoreUsureMoyen > 70 ? 'var(--color-red)' : scoreUsureMoyen > 40 ? 'var(--color-amber)' : 'var(--color-cyan)',
+      dimColor: 'rgba(41,211,240,0.3)',
+      icon: '🔧',
+      sub: 'Avg wear index',
+    },
+    {
+      label: 'False Alerts',
+      value: tauxFaussesAlertes,
+      max: 100,
+      unit: '%',
+      color: tauxFaussesAlertes > 25 ? 'var(--color-amber)' : 'var(--color-green)',
+      dimColor: 'rgba(242,184,75,0.3)',
+      icon: '⚠️',
+      sub: 'Dismissed rate',
+    },
+    {
+      label: 'CO₂ Saved',
+      value: co2Evite,
+      max: Math.max(1, co2Evite * 2),
+      unit: 'kg',
+      color: 'var(--color-cyan)',
+      dimColor: 'rgba(41,211,240,0.3)',
+      icon: '🌿',
+      sub: '0.7 kg/kWh mix',
+    },
+    {
+      label: 'Detection',
+      value: tempsDetection,
+      max: 10,
+      unit: 's',
+      color: tempsDetection < 3 ? 'var(--color-cyan)' : 'var(--color-amber)',
+      dimColor: 'rgba(41,211,240,0.3)',
+      icon: '🎯',
+      sub: 'Avg response',
+    },
+  ];
 
   return (
     <div
@@ -70,71 +173,51 @@ export const KPIPanel: React.FC<KPIPanelProps> = ({ kpis }) => {
       style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0', overflow: 'hidden' }}
     >
       {/* Header */}
-      <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text)', letterSpacing: '0.01em' }}>
-          Impact Metrics
+      <div style={{
+        padding: '0.625rem 0.875rem',
+        borderBottom: '1px solid var(--color-hairline)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-cyan)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          ◈ Impact Metrics
         </span>
-        <span style={{ fontSize: '0.6rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--color-text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           LIVE
         </span>
       </div>
 
-      {/* KPI Rows */}
-      <div style={{ padding: '0 0.875rem', flexGrow: 1, overflowY: 'auto' }}>
-        <KPIRow
-          label="Avoided Cost"
-          value={`${coutEvite.toFixed(2)} MAD`}
-          sub="Drift × duration × tariff (HP/HC)"
-          accent="var(--color-nominal)"
-        />
-        <KPIRow
-          label="CO₂ Prevented"
-          value={`${co2Evite.toFixed(3)} kg`}
-          sub={`Morocco Grid mix · 0.7 kg/kWh`}
-          accent="var(--color-blue)"
-        />
-        <KPIRow
-          label="Fleet Availability"
-          value={`${disponibiliteFlotte.toFixed(1)}%`}
-          sub="Time spent operating normally"
-          accent={dispoColor}
-          rightBadge={disponibiliteFlotte >= 95 ? '✓ Good' : disponibiliteFlotte >= 80 ? '⚠ Warning' : '✗ Critical'}
-          badgeColor={dispoColor}
-        />
-        <KPIRow
-          label="Avg Wear Score"
-          value={`${scoreUsureMoyen} / 100`}
-          sub={scoreUsureMoyen > 60 ? 'Maintenance scheduled' : 'Normal wear'}
-          accent={scoreColor}
-        />
-        <KPIRow
-          label="Detection Delay"
-          value={`${tempsDetection.toFixed(1)} s`}
-          sub="Anomaly → manager notification"
-          accent="var(--color-text)"
-        />
-        <KPIRow
-          label="False Alerts Rate"
-          value={`${tauxFaussesAlertes}%`}
-          sub="Dismissed vs. confirmed warnings"
-          accent={tauxFaussesAlertes > 25 ? 'var(--color-warning)' : 'var(--color-text)'}
-        />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0' }}>
-          <div>
-            <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-sub)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>
-              Active Anomalies
-            </div>
-            <div style={{ fontSize: '0.625rem', color: 'var(--color-text-dim)', marginTop: '1px' }}>Excludes dismissed alerts</div>
-          </div>
-          <span className="mono" style={{ fontSize: '1rem', fontWeight: 600, color: anomaliesSemaine > 0 ? 'var(--color-critical)' : 'var(--color-text)' }}>
-            {anomaliesSemaine}
-          </span>
-        </div>
+      {/* Gauges grid */}
+      <div style={{
+        padding: '0.75rem',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '0.5rem',
+        flexGrow: 1,
+        overflowY: 'auto',
+      }}>
+        {gauges.map((g) => (
+          <Gauge key={g.label} {...g} />
+        ))}
       </div>
 
-      {/* Footer */}
-      <div style={{ padding: '0.4rem 0.875rem', borderTop: '1px solid var(--color-border)', fontSize: '0.6rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-        Tariff Peak 0.15 · Off-Peak 0.08 DH/kWh
+      {/* Footer: Avoided cost — hero number */}
+      <div style={{
+        padding: '0.5rem 0.875rem',
+        borderTop: '1px solid var(--color-hairline)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: 'rgba(41,211,240,0.04)',
+      }}>
+        <div>
+          <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--color-text-sub)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+            Avoided Cost
+          </div>
+          <div style={{ fontSize: '0.55rem', color: 'var(--color-text-dim)' }}>Drift × duration × tariff</div>
+        </div>
+        <span className="mono" style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-green)', letterSpacing: '-0.02em' }}>
+          {coutEvite.toFixed(2)} <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--color-text-sub)' }}>MAD</span>
+        </span>
       </div>
     </div>
   );

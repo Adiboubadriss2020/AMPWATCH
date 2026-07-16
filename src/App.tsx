@@ -161,32 +161,45 @@ function App() {
       {/* Header bar */}
       <header className="app-header">
         <div className="header-brand">
-          <div 
-            style={{ 
-              width: '14px', 
-              height: '14px', 
-              borderRadius: '3px', 
-              backgroundColor: 'var(--color-blue)',
-              boxShadow: '0 0 10px rgba(62, 142, 255, 0.4)'
-            }} 
-          />
-          <h1 
-            style={{ 
-              margin: 0, 
-              fontSize: '1.25rem', 
-              fontWeight: 700, 
+          {/* Logo mark with radial glow */}
+          <div style={{
+            width: '32px', height: '32px',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(41,211,240,0.1)',
+            border: '1px solid rgba(41,211,240,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 16px rgba(41,211,240,0.25)',
+            flexShrink: 0,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#29D3F0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+            <h1 style={{
+              margin: 0, fontSize: '1rem',
+              fontWeight: 700,
               fontFamily: 'var(--font-heading)',
-              letterSpacing: '0.05em',
+              letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: 'var(--color-text)'
-            }}
-          >
-            AMPWATCH
-          </h1>
-          <span style={{ color: 'var(--color-hairline)', fontSize: '0.85rem' }}>|</span>
-          <span className="header-brand-subtitle">
-            Factory Machine Overconsumption Detector
-          </span>
+              color: 'var(--color-text)',
+              lineHeight: 1,
+            }}>
+              AMP<span style={{ color: 'var(--color-cyan)' }}>WATCH</span>
+            </h1>
+            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+              {['Industry 4.0', 'Predictive Maintenance', 'Energy AI'].map(tag => (
+                <span key={tag} style={{
+                  fontSize: '0.5rem', fontWeight: 600,
+                  color: 'var(--color-text-dim)',
+                  border: '1px solid var(--color-hairline)',
+                  padding: '1px 5px', borderRadius: '3px',
+                  textTransform: 'uppercase', letterSpacing: '0.05em',
+                  lineHeight: 1.6,
+                }}>{tag}</span>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Live status badge + Notification bell */}

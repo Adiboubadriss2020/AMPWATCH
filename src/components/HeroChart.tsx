@@ -7,14 +7,10 @@ interface HeroChartProps {
   anomalyIndex: number;
 }
 
-export const HeroChart: React.FC<HeroChartProps> = ({
-  machine,
-  series,
-  anomalyIndex
-}) => {
+export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIndex }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height: 220 });
-  const [isHovered, setIsHovered] = useState(false);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   const {
     machineId,
@@ -27,356 +23,301 @@ export const HeroChart: React.FC<HeroChartProps> = ({
     pression,
     powerFactor,
     costPerHour,
-    wifi_rssi: _wifi_rssi,
-    relay: _relay,
     anomalyType,
   } = machine;
 
-  // Handle resizing of the container to make chart responsive
   useEffect(() => {
     if (!containerRef.current) return;
-    const resizeObserver = new ResizeObserver((entries) => {
+    const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const { width } = entry.contentRect;
-        setDimensions({
-          width: Math.max(300, width),
-          height: 200
-        });
+        setDimensions({ width: Math.max(300, entry.contentRect.width), height: 200 });
       }
     });
-    resizeObserver.observe(containerRef.current);
-    return () => resizeObserver.disconnect();
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
   }, []);
 
   if (!series || series.length === 0) {
     return (
-      <div className="panel flex-center" style={{ height: '380px', color: 'var(--color-muted)' }}>
+      <div className="panel" style={{ height: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-dim)' }}>
         No telemetry data available
       </div>
     );
   }
 
   const { width, height } = dimensions;
-  const padding = { top: 20, right: 30, bottom: 30, left: 55 };
-  const plotWidth = width - padding.left - padding.right;
-  const plotHeight = height - padding.top - padding.bottom;
+  const pad = { top: 20, right: 30, bottom: 30, left: 55 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
 
-  // Baseline thresholds calculated dynamically
   const baselineMin = Math.round(normalKw * 0.9);
   const baselineMax = Math.round(normalKw * 1.1);
 
-  // Determine Y axis range
   const kwValues = series.map(d => d.kw);
-  const maxSeriesVal = Math.max(...kwValues);
-  const minSeriesVal = Math.min(...kwValues);
-
-  const yMax = Math.max(baselineMax * 1.35, maxSeriesVal * 1.05);
-  const yMin = Math.max(0, Math.min(baselineMin * 0.7, minSeriesVal * 0.95));
+  const maxVal = Math.max(...kwValues);
+  const minVal = Math.min(...kwValues);
+  const yMax = Math.max(baselineMax * 1.35, maxVal * 1.05);
+  const yMin = Math.max(0, Math.min(baselineMin * 0.7, minVal * 0.95));
   const yRange = yMax - yMin || 1;
 
-  // Map values to coordinates
-  const getX = (index: number) => {
-    return padding.left + (index / (series.length - 1)) * plotWidth;
+  const getX = (i: number) => pad.left + (i / (series.length - 1)) * plotW;
+  const getY = (v: number) => pad.top + plotH - ((v - yMin) / yRange) * plotH;
+
+  const mkPath = (pts: Reading[], from: number, to: number): string => {
+    if (pts.length === 0 || from < 0 || to < from) return '';
+    return pts.slice(from, to + 1)
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${getX(from + i).toFixed(1)} ${getY(p.kw).toFixed(1)}`)
+      .join(' ');
   };
 
-  const getY = (value: number) => {
-    return padding.top + plotHeight - ((value - yMin) / yRange) * plotHeight;
+  const mkArea = (pts: Reading[], from: number, to: number, baseY: number): string => {
+    if (pts.length === 0 || from < 0 || to < from) return '';
+    const line = pts.slice(from, to + 1)
+      .map((p, i) => `${getX(from + i).toFixed(1)},${getY(p.kw).toFixed(1)}`)
+      .join(' L ');
+    return `M ${getX(from).toFixed(1)},${baseY} L ${line} L ${getX(to).toFixed(1)},${baseY} Z`;
   };
 
-  // Generate SVG Path
-  const generatePath = (points: Reading[], startIndex: number, endIndex: number): string => {
-    if (points.length === 0 || startIndex < 0 || endIndex < startIndex) return '';
-    let d = '';
-    for (let i = startIndex; i <= endIndex; i++) {
-      const x = getX(i);
-      const y = getY(points[i].kw);
-      d += `${i === startIndex ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    }
-    return d;
-  };
-
-  // Anomaly point logic
   const hasAnomaly = anomalyIndex !== -1 && anomalyIndex < series.length;
-  const anomalyPt = hasAnomaly ? series[anomalyIndex] : null;
-  const anomalyX = hasAnomaly ? getX(anomalyIndex) : 0;
-  const anomalyY = hasAnomaly ? getY(anomalyPt!.kw) : 0;
+  const bottomY = pad.top + plotH;
 
-  // Split paths
-  const bluePath = hasAnomaly
-    ? generatePath(series, 0, anomalyIndex)
-    : generatePath(series, 0, series.length - 1);
+  const bluePath = hasAnomaly ? mkPath(series, 0, anomalyIndex) : mkPath(series, 0, series.length - 1);
+  const blueArea = hasAnomaly ? mkArea(series, 0, anomalyIndex, bottomY) : mkArea(series, 0, series.length - 1, bottomY);
+  const redPath = hasAnomaly ? mkPath(series, anomalyIndex, series.length - 1) : '';
+  const redArea = hasAnomaly ? mkArea(series, anomalyIndex, series.length - 1, bottomY) : '';
 
-  const redPath = hasAnomaly
-    ? generatePath(series, anomalyIndex, series.length - 1)
-    : '';
+  const ticks = [yMin, baselineMin, baselineMax, yMax].sort((a, b) => a - b)
+    .filter((t, i, arr) => i === 0 || t - arr[i - 1] > yRange * 0.08);
 
-  // Y-axis grid ticks (4 ticks)
-  const ticks = [yMin, baselineMin, baselineMax, yMax].sort((a, b) => a - b);
-  const uniqueTicks = ticks.filter((t, i, arr) => i === 0 || t - arr[i - 1] > yRange * 0.1);
+  const xLabelIndices = [0, Math.floor(series.length * 0.33), Math.floor(series.length * 0.66), series.length - 1];
 
-  // X-axis timestamps labels
-  const xLabelIndices = [
-    0,
-    Math.floor(series.length * 0.33),
-    Math.floor(series.length * 0.66),
-    series.length - 1
-  ];
+  // Latest data for floating tooltip
+  const latestKw = series[series.length - 1]?.kw ?? 0;
+  const latestX = getX(series.length - 1);
+  const latestY = getY(latestKw);
 
-  // Helper to format WiFi signal strength (reserved for when WiFi metric is re-enabled)
-  // const wifiLabel = wifi_rssi > -60 ? 'Excellent (📶)'
-  //   : wifi_rssi > -70 ? 'Good (📶)'
-  //   : wifi_rssi > -80 ? 'Fair (📶)'
-  //   : 'Weak (📶)';
+  // Hover tooltip
+  const hovPt = hoverIdx !== null ? series[hoverIdx] : null;
+  const hovX = hoverIdx !== null ? getX(hoverIdx) : 0;
+  const hovY = hoverIdx !== null ? getY(hovPt!.kw) : 0;
+
+  const statusColor = machine.status === 'CRITIQUE' ? 'var(--color-red)'
+    : machine.status === 'AVERTISSEMENT' ? 'var(--color-amber)'
+    : 'var(--color-cyan)';
+
+  const uniqueId = `hero-${machineId}`;
 
   return (
-    <div 
-      ref={containerRef}
-      className="panel"
-      style={{
-        position: 'relative',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem',
-      }}
-    >
-      {/* Chart Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div ref={containerRef} className="panel" style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-sub)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>
-            Live Telemetry
-          </span>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {machineId} 
-            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-sub)', fontWeight: 500 }}>
-              ({machineName})
-            </span>
+          <div className="section-label">⚡ Live Telemetry</div>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-heading)' }}>
+            <span style={{ color: statusColor }}>{machineId}</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-sub)', fontWeight: 500 }}>({machineName})</span>
           </h2>
         </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-nominal)', backgroundColor: 'var(--color-green-dim)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-            ● Active Ingestion
-          </span>
-        </div>
+        <span style={{
+          fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-green)',
+          backgroundColor: 'var(--color-green-dim)', padding: '0.2rem 0.6rem',
+          borderRadius: '4px', border: '1px solid rgba(63,209,107,0.3)',
+          letterSpacing: '0.05em',
+        }}>
+          ● INGESTING
+        </span>
       </div>
 
-      {/* SVG Interactive Chart */}
-      <div 
+      {/* SVG Chart */}
+      <div
         style={{ position: 'relative', width: '100%', height: `${height}px` }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const mx = e.clientX - rect.left - pad.left;
+          const idx = Math.round((mx / plotW) * (series.length - 1));
+          setHoverIdx(Math.max(0, Math.min(series.length - 1, idx)));
+        }}
+        onMouseLeave={() => setHoverIdx(null)}
       >
-        <svg 
-          width={width} 
-          height={height} 
-          style={{ overflow: 'visible', width: '100%', height: '100%' }}
-        >
-          {/* Subtle Horizontal Grid lines */}
-          {uniqueTicks.map((tick, idx) => (
-            <line
-              key={idx}
-              x1={padding.left}
-              y1={getY(tick)}
-              x2={width - padding.right}
-              y2={getY(tick)}
-              stroke="var(--color-border)"
-              strokeWidth={1}
-              strokeDasharray="3 3"
+        <svg width={width} height={height} style={{ overflow: 'visible', width: '100%', height: '100%' }}>
+          <defs>
+            {/* Cyan gradient fill */}
+            <linearGradient id={`${uniqueId}-grad-blue`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#29D3F0" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#29D3F0" stopOpacity="0.01" />
+            </linearGradient>
+            {/* Red gradient fill */}
+            <linearGradient id={`${uniqueId}-grad-red`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FF4B4B" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#FF4B4B" stopOpacity="0.01" />
+            </linearGradient>
+          </defs>
+
+          {/* Horizontal grid */}
+          {ticks.map((tick, i) => (
+            <line key={i}
+              x1={pad.left} y1={getY(tick)}
+              x2={width - pad.right} y2={getY(tick)}
+              stroke="var(--color-hairline)" strokeWidth={1} strokeDasharray="3 4"
             />
           ))}
 
-          {/* Baseline Safe Zone shading */}
+          {/* Baseline safe zone */}
           <rect
-            x={padding.left}
-            y={getY(baselineMax)}
-            width={plotWidth}
-            height={Math.max(0, getY(baselineMin) - getY(baselineMax))}
-            fill="var(--color-green-dim)"
-            opacity={0.3}
+            x={pad.left} y={getY(baselineMax)}
+            width={plotW} height={Math.max(0, getY(baselineMin) - getY(baselineMax))}
+            fill="rgba(63,209,107,0.06)"
           />
 
-          {/* Target Baseline lines */}
-          <line
-            x1={padding.left}
-            y1={getY(baselineMax)}
-            x2={width - padding.right}
-            y2={getY(baselineMax)}
-            stroke="var(--color-border-hi)"
-            strokeWidth={1}
-            strokeDasharray="2 2"
-          />
-          <line
-            x1={padding.left}
-            y1={getY(baselineMin)}
-            x2={width - padding.right}
-            y2={getY(baselineMin)}
-            stroke="var(--color-border-hi)"
-            strokeWidth={1}
-            strokeDasharray="2 2"
-          />
+          {/* Baseline lines */}
+          {[baselineMax, baselineMin].map((v, i) => (
+            <line key={i}
+              x1={pad.left} y1={getY(v)}
+              x2={width - pad.right} y2={getY(v)}
+              stroke="rgba(63,209,107,0.3)" strokeWidth={1} strokeDasharray="4 3"
+            />
+          ))}
 
-          {/* Left Y-axis values */}
-          {uniqueTicks.map((tick, idx) => (
-            <text
-              key={idx}
-              x={padding.left - 8}
-              y={getY(tick) + 4}
+          {/* Y-axis labels */}
+          {ticks.map((tick, i) => (
+            <text key={i}
+              x={pad.left - 8} y={getY(tick) + 4}
               textAnchor="end"
-              fill="var(--color-text-sub)"
-              style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)' }}
+              fill="var(--color-text-dim)"
+              style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)' }}
             >
               {tick.toFixed(0)} kW
             </text>
           ))}
 
-          {/* Bottom X-axis labels */}
-          {xLabelIndices.map((idx) => {
-            if (idx >= series.length) return null;
-            return (
-              <text
-                key={idx}
-                x={getX(idx)}
-                y={height - 8}
-                textAnchor="middle"
-                fill="var(--color-text-dim)"
-                style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)' }}
-              >
-                {series[idx].t}
-              </text>
-            );
-          })}
+          {/* X-axis labels */}
+          {xLabelIndices.map((idx) => idx < series.length && (
+            <text key={idx}
+              x={getX(idx)} y={height - 6}
+              textAnchor="middle"
+              fill="var(--color-text-dim)"
+              style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)' }}
+            >
+              {series[idx].t}
+            </text>
+          ))}
 
-          {/* Nominal line path */}
-          <path
-            d={bluePath}
-            fill="none"
-            stroke="var(--color-blue)"
-            strokeWidth={2}
+          {/* Gradient area fills */}
+          {blueArea && <path d={blueArea} fill={`url(#${uniqueId}-grad-blue)`} />}
+          {redArea  && <path d={redArea}  fill={`url(#${uniqueId}-grad-red)`}  />}
+
+          {/* Lines */}
+          <path d={bluePath} fill="none" stroke="var(--color-cyan)" strokeWidth={2}
+            style={{ filter: 'drop-shadow(0 0 4px rgba(41,211,240,0.6))' }}
           />
-
-          {/* Anomaly line path */}
           {redPath && (
-            <path
-              d={redPath}
-              fill="none"
-              stroke="var(--color-critical)"
-              strokeWidth={2}
+            <path d={redPath} fill="none" stroke="var(--color-red)" strokeWidth={2}
               strokeDasharray="1 1"
+              style={{ filter: 'drop-shadow(0 0 4px rgba(255,75,75,0.6))' }}
             />
           )}
 
-          {/* Anomaly Callout indicator */}
-          {hasAnomaly && (
+          {/* Anomaly pulse dot */}
+          {hasAnomaly && (() => {
+            const ax = getX(anomalyIndex);
+            const ay = getY(series[anomalyIndex].kw);
+            return (
+              <>
+                <circle cx={ax} cy={ay} r={8} fill="rgba(255,75,75,0.2)" style={{ animation: 'pulse-ring 1.8s infinite' }} />
+                <circle cx={ax} cy={ay} r={5} fill="var(--color-red)" style={{ filter: 'drop-shadow(0 0 5px #FF4B4B)' }} />
+                <circle cx={ax} cy={ay} r={2.5} fill="#fff" />
+              </>
+            );
+          })()}
+
+          {/* Latest value dot + floating tooltip */}
+          <circle cx={latestX} cy={latestY} r={4} fill="var(--color-cyan)"
+            style={{ filter: 'drop-shadow(0 0 5px rgba(41,211,240,0.8))' }}
+          />
+
+          {/* Hover crosshair */}
+          {hoverIdx !== null && (
             <>
-              <circle
-                cx={anomalyX}
-                cy={anomalyY}
-                r={6}
-                fill="var(--color-critical)"
-                style={{ animation: 'pulse-ring 1.5s infinite' }}
+              <line x1={hovX} y1={pad.top} x2={hovX} y2={pad.top + plotH}
+                stroke="var(--color-cyan)" strokeWidth={1} strokeOpacity={0.4} strokeDasharray="3 3"
               />
-              <circle
-                cx={anomalyX}
-                cy={anomalyY}
-                r={3}
-                fill="#ffffff"
+              <circle cx={hovX} cy={hovY} r={4} fill="var(--color-cyan)"
+                style={{ filter: 'drop-shadow(0 0 5px rgba(41,211,240,0.9))' }}
               />
             </>
           )}
         </svg>
 
-        {/* Floating Interactive anomaly diagnosis card (Section 4.1 / Step 8) */}
-        {hasAnomaly && isHovered && (
-          <div 
-            className="fade-in panel"
+        {/* Floating value tooltip — always shows latest, or hovered */}
+        <div style={{
+          position: 'absolute',
+          top: '8px',
+          right: '10px',
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--r-md)',
+          padding: '0.35rem 0.65rem',
+          pointerEvents: 'none',
+          boxShadow: 'var(--glow-cyan)',
+        }}>
+          <div style={{ fontSize: '0.6rem', color: 'var(--color-text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            {hoverIdx !== null ? hovPt?.t : 'Current'}
+          </div>
+          <div className="mono" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-cyan)' }}>
+            {(hoverIdx !== null ? hovPt!.kw : latestKw).toFixed(1)}
+            <span style={{ fontSize: '0.65rem', color: 'var(--color-text-sub)', fontWeight: 500 }}> kW</span>
+          </div>
+        </div>
+
+        {/* Anomaly hover card */}
+        {hasAnomaly && hoverIdx === anomalyIndex && (
+          <div className="fade-in panel panel--critical"
             style={{
-              position: 'absolute',
-              top: '10px',
-              left: `${padding.left + 15}px`,
-              borderColor: 'var(--color-red)',
-              padding: '0.75rem 1rem',
-              maxWidth: '280px',
-              pointerEvents: 'none',
-              backdropFilter: 'blur(10px)',
-              zIndex: 10,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-critical)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-              <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--color-critical)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {anomalyType} Detected
-              </span>
+              position: 'absolute', top: '10px', left: `${pad.left + 12}px`,
+              padding: '0.65rem 0.9rem', maxWidth: '240px', pointerEvents: 'none', zIndex: 10,
+              backdropFilter: 'blur(12px)',
+            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.2rem' }}>
+              <span style={{ color: 'var(--color-red)', fontSize: '0.75rem', fontWeight: 700 }}>⚠ {anomalyType}</span>
             </div>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text)', lineHeight: '1.35' }}>
-              {machineId} has exceeded normal power limit.
-              <br />
-              <strong style={{ color: 'var(--color-text-sub)' }}>Cause:</strong> {machine.cause || 'Unknown deviation'}
+            <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--color-text)', lineHeight: 1.35 }}>
+              {machineId} — {machine.cause || 'Anomaly detected'}
             </p>
           </div>
         )}
       </div>
 
-      {/* Real-Time Telemetry Details Grid (Secondary Sensor Fields) */}
-      <div 
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-          gap: '0.5rem',
-          marginTop: '0.25rem',
-          paddingTop: '0.75rem',
-          borderTop: '1px solid var(--color-border)',
-        }}
-      >
-        {/* Metric 1: Current & Voltage */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Voltage / Current</span>
-          <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
-            {voltage} V / {current} A
-          </span>
-        </div>
-
-        {/* Metric 2: Power Factor */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Power Factor</span>
-          <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
-            {powerFactor.toFixed(2)} (cos φ)
-          </span>
-        </div>
-
-        {/* Metric 3: Temp & Humidity */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Temp / Humidity</span>
-          <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
-            {temp} °C / {humidite} %
-          </span>
-        </div>
-
-        {/* Metric 4: Pressure */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Pressure</span>
-          <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
-            {pression.toFixed(1)} hPa
-          </span>
-        </div>
-
-        {/* Metric 5: Cost per hour */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Cost / Hour</span>
-          <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-green)', marginTop: '0.15rem' }}>
-            {costPerHour.toFixed(2)} MAD/h
-          </span>
-        </div>
-
-        {/* Metric 6: WiFi Signal / Relay 
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>WiFi / Relay Status</span>
-          <span className="mono" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
-            {wifi_rssi} dBm · {wifiLabel} · <span style={{ color: relay ? 'var(--color-red)' : 'var(--color-text-dim)' }}>{relay ? 'TRIPPED' : 'NOMINAL'}</span>
-          </span>
-        </div>
-        */}
+      {/* Telemetry metrics strip */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+        gap: '0.5rem',
+        paddingTop: '0.75rem',
+        borderTop: '1px solid var(--color-hairline)',
+      }}>
+        {[
+          { label: 'Voltage / Current', value: `${voltage} V / ${current} A`, color: 'var(--color-cyan)' },
+          { label: 'Power Factor',      value: `${powerFactor.toFixed(2)} cos φ`,  color: 'var(--color-text)' },
+          { label: 'Temp / Humidity',   value: `${temp} °C / ${humidite} %`,       color: temp > 60 ? 'var(--color-red)' : 'var(--color-text)' },
+          { label: 'Pressure',          value: `${pression.toFixed(1)} hPa`,        color: 'var(--color-text)' },
+          { label: 'Cost / Hour',       value: `${costPerHour.toFixed(2)} MAD/h`,   color: 'var(--color-green)' },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{
+            display: 'flex', flexDirection: 'column',
+            padding: '0.45rem 0.6rem',
+            backgroundColor: 'var(--color-overlay)',
+            borderRadius: '6px',
+            border: '1px solid var(--color-hairline)',
+          }}>
+            <span style={{ fontSize: '0.6rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {label}
+            </span>
+            <span className="mono" style={{ fontSize: '0.82rem', fontWeight: 600, color, marginTop: '0.15rem' }}>
+              {value}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
