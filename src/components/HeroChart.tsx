@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import type { Reading, Machine } from '../types';
+import { Compressor3D } from './Compressor3D';
 
 interface HeroChartProps {
   machine: Machine;
@@ -111,13 +112,35 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
     <div ref={containerRef} className="panel" style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <div className="section-label">⚡ Live Telemetry</div>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-heading)' }}>
-            <span style={{ color: statusColor }}>{machineId}</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-sub)', fontWeight: 500 }}>({machineName})</span>
-          </h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexGrow: 1 }}>
+          <div>
+            <div className="section-label">⚡ Live Telemetry</div>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-heading)' }}>
+              <span style={{ color: statusColor }}>{machineId}</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--color-text-sub)', fontWeight: 500 }}>({machineName})</span>
+            </h2>
+          </div>
+          {/* Three.js 3D Viewport */}
+          <div style={{
+            width: '130px',
+            height: '62px',
+            backgroundColor: 'var(--color-bg-subtle)',
+            border: '1px solid var(--color-hairline)',
+            borderRadius: 'var(--r-md)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            <Compressor3D status={machine.status} />
+            <div style={{
+              position: 'absolute', bottom: '2px', right: '4px',
+              fontSize: '0.45rem', color: 'var(--color-text-dim)',
+              fontFamily: 'var(--font-mono)', pointerEvents: 'none',
+              textTransform: 'uppercase', letterSpacing: '0.05em',
+            }}>
+              3D NODE
+            </div>
+          </div>
         </div>
         <span style={{
           fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-green)',
