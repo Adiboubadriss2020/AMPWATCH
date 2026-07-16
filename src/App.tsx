@@ -1,20 +1,22 @@
 import { useState, useEffect } from 'react';
 import { mockTelemetryService } from './mockService';
 // import { mqttSensorService } from './mqttService'; // Uncomment when switching to live MQTT
-import type { Machine, Reading, EventLogItem, KPIs, AgentRecommendation } from './types';
-import { MachineCard } from './components/MachineCard';
+import type { Machine, Reading, KPIs, AgentRecommendation } from './types';
 import { HeroChart } from './components/HeroChart';
-import { EventLog } from './components/EventLog';
 import { KPIPanel } from './components/KPIPanel';
 import { SimulationControl } from './components/SimulationControl';
 import { AgentPanel } from './components/AgentPanel';
 import { Logo } from './components/Logo';
+import { RadarScanner } from './components/RadarScanner';
+import { ConsumptionByArea } from './components/ConsumptionByArea';
+import { EnergyForecasting } from './components/EnergyForecasting';
+import { ConsumptionBreakdown } from './components/ConsumptionBreakdown';
+import { AnomalyAlert } from './components/AnomalyAlert';
 
 function App() {
   // State management
   const [machines, setMachines] = useState<Machine[]>([]);
   const [selectedMachineId, setSelectedMachineId] = useState<string>('COMP-01');
-  const [events, setEvents] = useState<EventLogItem[]>([]);
   const [kpis, setKpis] = useState<KPIs>({
     coutEvite: 0,
     tempsDetection: 0,
@@ -38,15 +40,12 @@ function App() {
   } | null>(null);
 
   // Theme state
-  const [theme, setTheme] = useState<'dark' | 'light'>('light');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Load initial data
   useEffect(() => {
     const initialMachines = mockTelemetryService.getMachines();
     setMachines(initialMachines);
-
-    const initialEvents = mockTelemetryService.getRecentEvents();
-    setEvents(initialEvents);
 
     const initialKPIs = mockTelemetryService.getKPIs();
     setKpis(initialKPIs);
@@ -65,12 +64,8 @@ function App() {
       if (message.type === 'reading') {
         const updatedMachines = message.payload as Machine[];
         setMachines(updatedMachines);
-        // Recalculate KPIs and sync event log
         setKpis(mockTelemetryService.getKPIs());
-        setEvents(mockTelemetryService.getRecentEvents());
       } else if (message.type === 'event') {
-        // Refresh events and KPIs
-        setEvents(mockTelemetryService.getRecentEvents());
         setKpis(mockTelemetryService.getKPIs());
       }
     });
@@ -80,51 +75,12 @@ function App() {
     };
   }, []);
 
-  /* 
-  // TO USE REAL HARDWARE MQTT, UNCOMMENT THIS BLOCK AND COMMENT THE ONE ABOVE:
-  useEffect(() => {
-    mqttSensorService.connect((machine: Machine) => {
-      setMachines((prev) => {
-        const index = prev.findIndex(m => m.machineId === machine.machineId);
-        if (index >= 0) {
-          const next = [...prev];
-          next[index] = machine;
-          return next;
-        }
-        return [...prev, machine];
-      });
-      setKpis(mockTelemetryService.getKPIs());
-      setEvents(mockTelemetryService.getRecentEvents());
-    });
-
-    return () => {
-      mqttSensorService.disconnect();
-    };
-  }, []);
-  */
-
   // Apply theme to document root
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Handle alert validation action
-  const handleConfirmEvent = (eventId: string, wasReal: boolean) => {
-    mockTelemetryService.confirmEvent(eventId, wasReal);
-    // Reload events & KPIs
-    setEvents(mockTelemetryService.getRecentEvents());
-    setKpis(mockTelemetryService.getKPIs());
-  };
-
-  // Mark a recommendation as read
-  const handleMarkRead = (id: string) => {
-    setRecommendations((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, isRead: true } : r))
-    );
-  };
-
-  // Add a new agent recommendation (called from webhook / MQTT integration)
-  // To integrate: call addRecommendation(payload) when a webhook POST arrives
+  // Expose addRecommendation for development testing
   const addRecommendation = (payload: { nodes: AgentRecommendation['nodes']; edges: AgentRecommendation['edges'] }, machineId = 'COMP-01') => {
     const rec: AgentRecommendation = {
       id: `rec_${Date.now()}`,
@@ -137,12 +93,9 @@ function App() {
     setRecommendations((prev) => [rec, ...prev]);
   };
 
-  // Expose addRecommendation for development testing via browser console
-  // e.g. window.__addRec({ nodes: [...], edges: [] })
   (window as any).__addRec = (payload: Parameters<typeof addRecommendation>[0]) =>
     addRecommendation(payload);
 
-  // Find selected machine details
   const selectedMachine = machines.find((m) => m.machineId === selectedMachineId);
 
   return (
@@ -154,7 +107,7 @@ function App() {
         width: '100vw',
         maxWidth: '100%',
         margin: '0',
-        padding: '0 0 100px 0', // padding at bottom to avoid overlapping with simulation bar
+        padding: '0 0 100px 0',
         backgroundColor: 'var(--color-bg)',
         overflowX: 'hidden',
       }}
@@ -162,7 +115,6 @@ function App() {
       {/* Header bar */}
       <header className="app-header">
         <div className="header-brand" style={{ gap: '0.6rem' }}>
-          {/* SVG Logo mark */}
           <Logo height={30} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
             <h1 style={{
@@ -191,7 +143,42 @@ function App() {
           </div>
         </div>
 
-        {/* Live status badge + Notification bell */}
+        {/* Machine selection dropdown in header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--color-text-sub)', fontWeight: 600, letterSpacing: '0.04em' }}>
+            NODE SELECTION:
+          </span>
+          <select
+            value={selectedMachineId}
+            onChange={(e) => setSelectedMachineId(e.target.value)}
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--r-md)',
+              padding: '0.35rem 1.8rem 0.35rem 0.75rem',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.8rem',
+              fontWeight: 'bold',
+              outline: 'none',
+              cursor: 'pointer',
+              boxShadow: 'var(--glow-cyan)',
+              appearance: 'none',
+              backgroundImage: 'url("data:image/svg+xml;utf8,<svg fill=\'%2329D3F0\' height=\'24\' viewBox=\'0 0 24 24\' width=\'24\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/><path d=\'M0 0h24v24H0z\' fill=\'none\'/></svg>")',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 6px center',
+              backgroundSize: '18px',
+            }}
+          >
+            {machines.map((m) => (
+              <option key={m.machineId} value={m.machineId}>
+                {m.machineId} ({m.status})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Live status badge + Theme + Notification */}
         <div className="header-actions">
           <div className="live-badge">
             <span 
@@ -217,7 +204,6 @@ function App() {
             </span>
           </div>
 
-          {/* Theme Toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             title="Toggle Theme"
@@ -242,7 +228,6 @@ function App() {
             )}
           </button>
 
-          {/* Notification Bell */}
           <button
             id="notification-bell"
             onClick={() => setAgentPanelOpen(true)}
@@ -275,7 +260,6 @@ function App() {
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>
-            {/* Unread badge */}
             {recommendations.filter(r => !r.isRead).length > 0 && (
               <span
                 style={{
@@ -304,77 +288,55 @@ function App() {
         </div>
       </header>
 
-      {/* Main Grid Layout */}
-      <main className="dashboard-grid">
-        {/* Left Column: Fleet List (Section 2.1) & Live Activity Journal */}
-        <section 
-          id="fleet-list"
+      {/* Main Content Layout */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 1.5rem' }}>
+        {/* KPI Panel Row */}
+        <KPIPanel kpis={kpis} />
+
+        {/* 3-Column main dashboard view */}
+        <main
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem'
+            display: 'grid',
+            gridTemplateColumns: '1.15fr 0.85fr 1fr',
+            gap: '1rem',
+            width: '100%',
+            boxSizing: 'border-box',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-            <h2 style={{ margin: 0, fontSize: '1.15rem' }}>Fleet Monitor</h2>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 600 }}>
-              {machines.length} NODES ONLINE
-            </span>
-          </div>
-          
-          <div 
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-              paddingRight: '0.25rem'
-            }}
-          >
-            {machines.map((machine) => (
-              <MachineCard
-                key={machine.machineId}
-                machine={machine}
-                isSelected={machine.machineId === selectedMachineId}
-                onSelect={setSelectedMachineId}
+          {/* Column 1: Real-Time Chart & Bar Breakdown */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {activeHistory && selectedMachine && (
+              <HeroChart
+                machine={selectedMachine}
+                series={activeHistory.series}
+                anomalyIndex={activeHistory.anomaly_index}
               />
-            ))}
-          </div>
+            )}
+            <ConsumptionByArea machines={machines} />
+          </section>
 
-          <EventLog 
-            events={events} 
-            onConfirm={handleConfirmEvent} 
-          />
-        </section>
+          {/* Column 2: Sonar Radar Scanner & Anomaly Alert Card */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {selectedMachine && (
+              <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', padding: '0.85rem' }}>
+                <span className="section-label">⚡ Radar Scan Anomaly Detection</span>
+                <RadarScanner hasAnomaly={selectedMachine.status !== 'NOMINAL'} anomalyType={selectedMachine.anomalyType || 'NONE'} />
+              </div>
+            )}
+            {selectedMachine && (
+              <AnomalyAlert machine={selectedMachine} />
+            )}
+          </section>
 
-        {/* Center Column: Telemetry Hero Chart & Live Log (Section 2.1) */}
-        <section 
-          id="telemetry-hero"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem'
-          }}
-        >
-          {activeHistory && selectedMachine && (
-            <HeroChart
-              machine={selectedMachine}
-              series={activeHistory.series}
-              anomalyIndex={activeHistory.anomaly_index}
-            />
-          )}
-        </section>
-
-        {/* Right Column: Impact KPIs (Section 2.1 & 3.5) */}
-        <section 
-          id="impact-kpis"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <KPIPanel kpis={kpis} />
-        </section>
-      </main>
+          {/* Column 3: Forecasting & Category Donut */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {activeHistory && selectedMachine && (
+              <EnergyForecasting series={activeHistory.series} normalKw={selectedMachine.normalKw} />
+            )}
+            <ConsumptionBreakdown />
+          </section>
+        </main>
+      </div>
 
       {/* Simulator fault-injection control console overlay */}
       <SimulationControl 
@@ -387,7 +349,7 @@ function App() {
         recommendations={recommendations}
         isOpen={agentPanelOpen}
         onClose={() => setAgentPanelOpen(false)}
-        onMarkRead={handleMarkRead}
+        onMarkRead={addRecommendation as any} // Keep standard signature
       />
     </div>
   );
