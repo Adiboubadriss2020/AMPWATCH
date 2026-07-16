@@ -381,7 +381,7 @@ class TelemetrySimulator {
     };
   }
 
-  public getRecentEvents(): EventLogItem[] { return this.events; }
+  public getRecentEvents(): EventLogItem[] { return [...this.events]; }
 
   public getKPIs(): KPIs {
     const total    = this.confirmedAlerts + this.dismissedAlerts;
