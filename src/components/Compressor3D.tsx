@@ -7,22 +7,25 @@ interface Compressor3DProps {
 
 const STATE_CONFIG = {
   NOMINAL: {
-    color: 0x29D3F0, // Cyan
-    speed: 0.008,
-    pulseSpeed: 0.001,
-    glowIntensity: 0.5,
+    color: 0x29D3F0, // Cyber Cyan
+    coreColor: 0x2E7FE8, // Blue
+    speed: 0.006,
+    pulseSpeed: 1.5,
+    scaleMult: 1.0,
   },
   AVERTISSEMENT: {
-    color: 0xF2B84B, // Amber
-    speed: 0.025,
-    pulseSpeed: 0.003,
-    glowIntensity: 1.0,
+    color: 0xF2B84B, // Amber Warning
+    coreColor: 0xD97706,
+    speed: 0.02,
+    pulseSpeed: 3.5,
+    scaleMult: 1.1,
   },
   CRITIQUE: {
-    color: 0xFF4B4B, // Red
-    speed: 0.065,
-    pulseSpeed: 0.008,
-    glowIntensity: 2.0,
+    color: 0xFF4B4B, // Red Alarm
+    coreColor: 0x991B1B,
+    speed: 0.05,
+    pulseSpeed: 8.0,
+    scaleMult: 1.25,
   },
 };
 
@@ -30,7 +33,6 @@ export const Compressor3D: React.FC<Compressor3DProps> = ({ status }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef(status);
 
-  // Keep ref up to date so animation loop uses latest config instantly
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
@@ -38,113 +40,122 @@ export const Compressor3D: React.FC<Compressor3DProps> = ({ status }) => {
   useEffect(() => {
     if (!mountRef.current) return;
 
-    // Create scene, camera, renderer
-    const width = mountRef.current.clientWidth || 300;
-    const height = mountRef.current.clientHeight || 150;
+    const width = mountRef.current.clientWidth || 130;
+    const height = mountRef.current.clientHeight || 62;
     const scene = new THREE.Scene();
 
+    // Technical background grid overlay look inside canvas
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.z = 8;
+    camera.position.z = 4.2;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mountRef.current.appendChild(renderer.domElement);
 
-    // Create custom industrial machine wireframe (Procedural Cylinder + rings)
     const group = new THREE.Group();
     scene.add(group);
 
-    // 1. Core Compressor Cylinder
-    const cylinderGeom = new THREE.CylinderGeometry(1.2, 1.2, 3.2, 16, 6, true);
-    const cylinderMat = new THREE.MeshBasicMaterial({
+    // 1. Holographic outer frame (Icosahedron for sci-fi node structure)
+    const outerGeom = new THREE.IcosahedronGeometry(1.0, 1);
+    const outerMat = new THREE.MeshBasicMaterial({
       color: 0x29D3F0,
       wireframe: true,
       transparent: true,
-      opacity: 0.25,
+      opacity: 0.35,
     });
-    const cylinderMesh = new THREE.Mesh(cylinderGeom, cylinderMat);
-    group.add(cylinderMesh);
+    const outerMesh = new THREE.Mesh(outerGeom, outerMat);
+    group.add(outerMesh);
 
-    // 2. Glowing Piston/Rotor Points inside
-    const particleCount = 120;
-    const particleGeom = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-
-    for (let i = 0; i < particleCount; i++) {
-      // Cylinder distribution
-      const theta = Math.random() * Math.PI * 2;
-      const r = Math.random() * 0.9;
-      const y = (Math.random() - 0.5) * 2.8;
-      positions[i * 3] = Math.cos(theta) * r;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = Math.sin(theta) * r;
-    }
-
-    particleGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const particleMat = new THREE.PointsMaterial({
+    // 2. Pulse core sphere (Solid glowing center)
+    const coreGeom = new THREE.SphereGeometry(0.35, 16, 16);
+    const coreMat = new THREE.MeshBasicMaterial({
       color: 0x2E7FE8,
-      size: 0.08,
       transparent: true,
       opacity: 0.8,
     });
-    const particles = new THREE.Points(particleGeom, particleMat);
-    group.add(particles);
+    const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+    group.add(coreMesh);
 
-    // 3. Outer orbiting rings
-    const ringGeom1 = new THREE.TorusGeometry(1.8, 0.02, 8, 48);
+    // 3. Orbiting ring (Technical design)
+    const ringGeom = new THREE.RingGeometry(1.25, 1.28, 64);
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0x29D3F0,
+      side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.4,
     });
-    const ring1 = new THREE.Mesh(ringGeom1, ringMat);
-    ring1.rotation.x = Math.PI / 2;
-    group.add(ring1);
+    const ring = new THREE.Mesh(ringGeom, ringMat);
+    ring.rotation.x = Math.PI / 2.3;
+    group.add(ring);
 
-    const ringGeom2 = new THREE.TorusGeometry(1.9, 0.015, 8, 48);
-    const ring2 = new THREE.Mesh(ringGeom2, ringMat);
-    ring2.rotation.x = Math.PI / 4;
-    group.add(ring2);
+    // 4. Floating particles around core
+    const particleCount = 45;
+    const pGeom = new THREE.BufferGeometry();
+    const pCoords = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const r = 0.65 + Math.random() * 0.35; // Constrained shells
+      pCoords[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      pCoords[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      pCoords[i * 3 + 2] = r * Math.cos(phi);
+    }
+    pGeom.setAttribute('position', new THREE.BufferAttribute(pCoords, 3));
+    const pMat = new THREE.PointsMaterial({
+      color: 0x29D3F0,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const particles = new THREE.Points(pGeom, pMat);
+    group.add(particles);
 
-    // Animation variables
     let animationFrameId: number;
-    let time = 0;
+    let clock = new THREE.Clock();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-
+      const elapsed = clock.getElapsedTime();
       const cfg = STATE_CONFIG[statusRef.current] ?? STATE_CONFIG.NOMINAL;
-      time += 1;
 
-      // Rotate group
+      // Group rotation
       group.rotation.y += cfg.speed;
-      group.rotation.x = Math.sin(time * 0.01) * 0.15;
+      group.rotation.x = Math.sin(elapsed * 0.5) * 0.15;
+      group.rotation.z += 0.002;
 
-      // Update ring rotation speeds
-      ring1.rotation.z += cfg.speed * 0.5;
-      ring2.rotation.z -= cfg.speed * 0.8;
+      // Ring counter-rotation
+      ring.rotation.z -= cfg.speed * 1.5;
 
-      // Pulsing scale & opacity
-      const pulse = 1.0 + Math.sin(time * cfg.pulseSpeed * 50) * 0.08 * cfg.glowIntensity;
-      cylinderMesh.scale.set(pulse, pulse, pulse);
+      // Dynamic scaling (pulse) representing data transmission
+      const pulseFactor = 1.0 + Math.sin(elapsed * cfg.pulseSpeed) * 0.06 * cfg.scaleMult;
+      outerMesh.scale.set(pulseFactor, pulseFactor, pulseFactor);
+      
+      const corePulse = 1.0 + Math.cos(elapsed * cfg.pulseSpeed * 1.2) * 0.15 * cfg.scaleMult;
+      coreMesh.scale.set(corePulse, corePulse, corePulse);
 
       // Color updates
-      cylinderMat.color.setHex(cfg.color);
-      particleMat.color.setHex(cfg.color);
+      outerMat.color.setHex(cfg.color);
+      coreMat.color.setHex(cfg.coreColor);
       ringMat.color.setHex(cfg.color);
+      pMat.color.setHex(cfg.color);
 
-      // Flash/pulse opacity for alert status
+      // Status visual indicators
       if (statusRef.current === 'CRITIQUE') {
-        const strobe = Math.sin(time * 0.25) > 0;
-        cylinderMat.opacity = strobe ? 0.6 : 0.15;
-        ringMat.opacity = strobe ? 0.9 : 0.25;
+        const flash = Math.sin(elapsed * 18) > 0;
+        outerMat.opacity = flash ? 0.7 : 0.15;
+        coreMat.opacity = flash ? 0.95 : 0.3;
+        pMat.opacity = flash ? 0.9 : 0.2;
       } else if (statusRef.current === 'AVERTISSEMENT') {
-        cylinderMat.opacity = 0.35 + Math.sin(time * 0.08) * 0.15;
-        ringMat.opacity = 0.7 + Math.sin(time * 0.08) * 0.2;
+        outerMat.opacity = 0.35 + Math.sin(elapsed * 4) * 0.15;
+        coreMat.opacity = 0.75 + Math.sin(elapsed * 4) * 0.15;
+        pMat.opacity = 0.8;
       } else {
-        cylinderMat.opacity = 0.22;
-        ringMat.opacity = 0.55;
+        outerMat.opacity = 0.25;
+        coreMat.opacity = 0.65;
+        pMat.opacity = 0.7;
       }
 
       renderer.render(scene, camera);
@@ -152,7 +163,6 @@ export const Compressor3D: React.FC<Compressor3DProps> = ({ status }) => {
 
     animate();
 
-    // Handle resizing
     const handleResize = () => {
       if (!mountRef.current) return;
       const w = mountRef.current.clientWidth;
@@ -165,21 +175,20 @@ export const Compressor3D: React.FC<Compressor3DProps> = ({ status }) => {
     const resizeObserver = new ResizeObserver(() => handleResize());
     resizeObserver.observe(mountRef.current);
 
-    // Cleanup
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }
-      // Dispose materials & geometries
-      cylinderGeom.dispose();
-      cylinderMat.dispose();
-      particleGeom.dispose();
-      particleMat.dispose();
-      ringGeom1.dispose();
-      ringGeom2.dispose();
+      outerGeom.dispose();
+      outerMat.dispose();
+      coreGeom.dispose();
+      coreMat.dispose();
+      ringGeom.dispose();
       ringMat.dispose();
+      pGeom.dispose();
+      pMat.dispose();
       renderer.dispose();
     };
   }, []);
@@ -190,7 +199,6 @@ export const Compressor3D: React.FC<Compressor3DProps> = ({ status }) => {
       style={{
         width: '100%',
         height: '100%',
-        minHeight: '140px',
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
