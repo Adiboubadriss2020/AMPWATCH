@@ -63,6 +63,7 @@ export interface Machine {
   wifi_rssi: number;
   relay: boolean;
   cooldown_remaining: number | null;
+  forcedStatus?: MachineStatus | null;
 }
 
 // ─── Série historique pour le graphique ───────────────────────────────────────

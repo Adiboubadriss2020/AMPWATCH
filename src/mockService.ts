@@ -236,22 +236,38 @@ class TelemetrySimulator {
       const template = MACHINE_TEMPLATES.find(t => t.machineId === machine.machineId)!;
       let kw: number;
 
-      if (machine.status === 'NOMINAL') {
+      // Determine nominal vs anomaly based on manual forcedStatus or current status
+      const statusToUse = machine.forcedStatus !== undefined ? machine.forcedStatus : machine.status;
+
+      if (statusToUse === 'NOMINAL' || statusToUse === null) {
         kw = Math.round(machine.normalKw * (0.95 + Math.random() * 0.1) * 10) / 10;
         this.nominalSeconds += 1.5;
       } else {
-        const mult = machine.status === 'CRITIQUE' ? 1.55 : 1.25;
+        const mult = statusToUse === 'CRITIQUE' ? 1.55 : 1.25;
         kw = Math.round((machine.normalKw * mult + Math.random() * 4) * 10) / 10;
         const devKwh = kw - machine.normalKw;
         this.accumulatedCoutEvite += (devKwh * (1.5 / 3600)) * 0.15;
       }
 
-      const computed = computeFields(kw, machine.normalKw, machine.temp, machine.humidite ?? 55, heure, machine.scenario);
+      // Compute fields, force anomaly rule outputs if manual override is active
+      const isForced = statusToUse !== 'NOMINAL' && statusToUse !== null;
+      const computed = computeFields(
+        kw, 
+        machine.normalKw, 
+        machine.temp, 
+        machine.humidite ?? 55, 
+        heure, 
+        machine.scenario,
+        isForced
+      );
 
       // CO₂ cumulé
       this.accumulatedCo2Saved += (computed.co2Economise ?? 0) * (1.5 / 3600);
 
-      const newStatus = severityToStatus(computed.severity ?? 'NORMAL');
+      // Determine final status
+      const newStatus = statusToUse !== undefined && statusToUse !== null 
+        ? statusToUse 
+        : severityToStatus(computed.severity ?? 'NORMAL');
 
       // Transition NOMINAL → anomalie → émettre alerte
       if (newStatus !== 'NOMINAL' && machine.status === 'NOMINAL' && machine.cooldown_remaining === null) {
@@ -440,6 +456,7 @@ class TelemetrySimulator {
         cause: template.cause,
         relay: true,
         cooldown_remaining: COOLDOWN_DURATION,
+        forcedStatus: status, // SET FORCED STATUS PERSISTENTLY
       };
     });
 
@@ -469,6 +486,7 @@ class TelemetrySimulator {
         status: 'NOMINAL' as MachineStatus,
         anomaly: false, anomalyType: undefined, cause: undefined,
         relay: false, cooldown_remaining: null,
+        forcedStatus: 'NOMINAL', // RESET TO NOMINAL FORCED
       };
     });
 
