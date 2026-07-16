@@ -155,7 +155,8 @@ export const SimulationControl: React.FC<SimulationControlProps> = ({ machines, 
 
         {/* Speed settings */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--color-muted)', fontWeight: 600 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--color-muted)', fontWeight: 600 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-critical)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             SIMULATION SPEED:
           </span>
           {[1, 2, 5, 15, 60].map((s) => (
@@ -185,7 +186,10 @@ export const SimulationControl: React.FC<SimulationControlProps> = ({ machines, 
 
         {/* Cooldown cheat explanation */}
         <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)', maxWidth: '280px', lineBreak: 'strict' }}>
-          💡 <span style={{ color: 'var(--color-blue)', fontWeight: 600 }}>Tip:</span> Increase speed to <b>15x</b> or <b>60x</b> to watch the 300s alert cooldown suppress timers countdown in real-time.
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span style={{ color: 'var(--color-blue)', fontWeight: 600 }}>Tip:</span> Increase speed to <b>15x</b> or <b>60x</b> to watch the 300s alert cooldown suppress timers countdown in real-time.
+        </span>
         </div>
       </div>
     </div>
