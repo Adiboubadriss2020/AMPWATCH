@@ -7,162 +7,154 @@ interface MachineCardProps {
   onSelect: (id: string) => void;
 }
 
+const STATUS_CONFIG = {
+  CRITIQUE: {
+    color: 'var(--color-critical)',
+    bg: 'var(--color-red-dim)',
+    border: 'rgba(239,68,68,0.35)',
+    label: 'CRITIQUE',
+  },
+  AVERTISSEMENT: {
+    color: 'var(--color-warning)',
+    bg: 'var(--color-amber-dim)',
+    border: 'rgba(245,158,11,0.35)',
+    label: 'ATTENTION',
+  },
+  NOMINAL: {
+    color: 'var(--color-nominal)',
+    bg: 'var(--color-green-dim)',
+    border: 'transparent',
+    label: 'NOMINAL',
+  },
+};
+
 export const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, onSelect }) => {
   const { machineId, machineName, status, kw, normalKw, timestamp, cooldown_remaining } = machine;
 
-  // Format cooldown time (e.g. 4:12)
-  const formatCooldown = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.NOMINAL;
+  const deviationPct = normalKw > 0 ? Math.round(((kw - normalKw) / normalKw) * 100) : 0;
+
+  const formatTime = (ts: string) => {
+    if (ts.includes('T')) return new Date(ts).toTimeString().slice(0, 5);
+    return ts.slice(0, 5);
   };
 
-  // Parse ISO timestamp or time string for card header
-  const formatCardTime = (ts: string): string => {
-    if (ts.includes('T')) {
-      const date = new Date(ts);
-      return date.toTimeString().split(' ')[0].substring(0, 5);
-    }
-    return ts.substring(0, 5);
-  };
-
-  // Calculate deviation relative to baseline target (normalKw)
-  const deviationPercent = normalKw > 0 ? Math.round(((kw - normalKw) / normalKw) * 100) : 0;
-
-  // Determine status configurations
-  let subtext = '';
-  let deviationText = '';
-
-  switch (status) {
-    case 'CRITIQUE':
-      deviationText = `+${deviationPercent}% vs limit`;
-      subtext = `flagged ${formatCardTime(timestamp)}`;
-      break;
-    case 'AVERTISSEMENT':
-      deviationText = `+${deviationPercent}% vs limit`;
-      subtext = 'watching telemetry';
-      break;
-    case 'NOMINAL':
-    default:
-      deviationText = '';
-      subtext = 'Nominal · within limits';
-      break;
-  }
-
-  // Map status to CSS colors
-  const getStatusColor = (s: string) => {
-    if (s === 'CRITIQUE') return 'var(--color-red)';
-    if (s === 'AVERTISSEMENT') return 'var(--color-amber)';
-    return 'var(--color-green)';
-  };
+  const formatCooldown = (s: number) =>
+    `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
     <button
       onClick={() => onSelect(machineId)}
-      className={`machine-card ${isSelected ? 'selected' : ''}`}
       style={{
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
-        padding: '1rem',
-        backgroundColor: isSelected ? 'var(--color-hairline)' : 'var(--color-panel)',
-        border: '1px solid',
-        borderColor: isSelected ? 'var(--color-blue)' : 'var(--color-hairline)',
-        borderRadius: '8px',
+        padding: '0.75rem 0.875rem',
+        backgroundColor: isSelected ? 'var(--color-overlay)' : 'var(--color-surface)',
+        border: `1px solid ${isSelected ? 'var(--color-blue)' : status !== 'NOMINAL' ? cfg.border : 'var(--color-border)'}`,
+        borderRadius: 'var(--r-lg)',
         textAlign: 'left',
-        transition: 'all 0.2s ease',
+        transition: 'border-color 0.15s, background-color 0.15s',
         gap: '0.5rem',
-        marginBottom: '0.75rem',
+        cursor: 'pointer',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      {/* Header Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+      {/* Selected accent bar */}
+      {isSelected && (
+        <span
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: '3px',
+            backgroundColor: 'var(--color-blue)',
+            borderRadius: '3px 0 0 3px',
+          }}
+        />
+      )}
+
+      {/* ── Row 1: ID + time ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span 
+          <span
             className={status === 'CRITIQUE' ? 'pulse-critical' : ''}
             style={{
-              width: '8px',
-              height: '8px',
-              backgroundColor: getStatusColor(status),
-              display: 'inline-block',
+              width: '7px',
+              height: '7px',
               borderRadius: '50%',
+              backgroundColor: cfg.color,
+              display: 'inline-block',
+              flexShrink: 0,
             }}
           />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontWeight: 600, fontSize: '0.9rem', fontFamily: 'var(--font-heading)' }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--color-text)', fontFamily: 'var(--font-mono)', letterSpacing: '0.03em' }}>
               {machineId}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+            </div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--color-text-sub)', marginTop: '1px' }}>
               {machineName}
-            </span>
+            </div>
           </div>
         </div>
-        <span className="timestamp" style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-          {formatCardTime(timestamp)}
+        <span className="mono" style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)' }}>
+          {formatTime(timestamp)}
         </span>
       </div>
 
-      {/* Reading Row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-          <span className="number" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text)' }}>
+      {/* ── Row 2: kW reading + deviation ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.2rem' }}>
+          <span className="mono" style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--color-text)', lineHeight: 1 }}>
             {kw.toFixed(1)}
           </span>
-          <span style={{ fontSize: '0.85rem', color: 'var(--color-muted)' }}>kW</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-sub)', fontWeight: 500 }}>kW</span>
         </div>
 
-        {deviationText && (
-          <span 
-            className="number"
-            style={{ 
-              fontSize: '0.85rem', 
-              fontWeight: 600, 
-              color: getStatusColor(status) 
-            }}
-          >
-            {deviationText}
+        {status !== 'NOMINAL' && (
+          <span className="mono" style={{ fontSize: '0.75rem', fontWeight: 600, color: cfg.color }}>
+            {deviationPct > 0 ? `+${deviationPct}` : deviationPct}%
           </span>
         )}
       </div>
 
-      {/* Footer Row / Subtext */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', fontSize: '0.8rem' }}>
-        <span style={{ color: status === 'NOMINAL' ? 'var(--color-muted)' : 'var(--color-text)', opacity: 0.9 }}>
-          {subtext}
+      {/* ── Row 3: status badge ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-sub)' }}>
+          {status === 'NOMINAL' ? `Nominal · ${normalKw} kW baseline` : `${deviationPct > 0 ? '+' : ''}${deviationPct}% above limit`}
         </span>
-        <span 
-          style={{ 
-            fontSize: '0.65rem', 
-            fontWeight: 700, 
-            backgroundColor: status === 'CRITIQUE' ? 'rgba(255, 77, 94, 0.1)' : status === 'AVERTISSEMENT' ? 'rgba(242, 174, 61, 0.1)' : 'rgba(47, 217, 140, 0.1)',
-            color: getStatusColor(status),
-            padding: '0.1rem 0.3rem',
-            borderRadius: '3px',
-            letterSpacing: '0.05em'
+        <span
+          className="badge"
+          style={{
+            background: cfg.bg,
+            color: cfg.color,
+            border: `1px solid ${cfg.border !== 'transparent' ? cfg.border : cfg.bg}`,
           }}
         >
-          {status}
+          {cfg.label}
         </span>
       </div>
 
-      {/* Suppression Cooldown Badge (Section 3.6 / Step 10) */}
+      {/* ── Cooldown suppression bar ── */}
       {cooldown_remaining !== null && (
-        <div 
+        <div
           style={{
-            marginTop: '0.25rem',
-            padding: '0.25rem 0.5rem',
-            borderRadius: '4px',
-            backgroundColor: 'rgba(242, 174, 61, 0.1)',
-            border: '1px solid rgba(242, 174, 61, 0.2)',
-            color: 'var(--color-amber)',
-            fontSize: '0.75rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.35rem',
-            fontFamily: 'var(--font-mono)'
+            gap: '0.4rem',
+            padding: '0.25rem 0.4rem',
+            backgroundColor: 'var(--color-amber-dim)',
+            border: '1px solid rgba(245,158,11,0.2)',
+            borderRadius: 'var(--r-sm)',
+            fontSize: '0.68rem',
+            color: 'var(--color-amber)',
+            fontFamily: 'var(--font-mono)',
           }}
         >
-          <span>🔕 Supprimé ({formatCooldown(cooldown_remaining)})</span>
+          <span>⏱</span>
+          <span>Suppression active · {formatCooldown(cooldown_remaining)} restant</span>
         </div>
       )}
     </button>

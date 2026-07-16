@@ -1,59 +1,99 @@
 export type MachineStatus = 'NOMINAL' | 'AVERTISSEMENT' | 'CRITIQUE';
 
+// ─── Machine (corresponds exactly to the backend transformation output) ────────
 export interface Machine {
+  // Identité
   machineId: string;
   machineName: string;
   timestamp: string;
   date?: string;
   time?: string;
+  heure?: number;
+
+  // Électricité
   kw: number;
   current: number;
   voltage: number;
+  powerFactor: number;
+  normalKw: number;
+  deviation: number;
+
+  // Environnement
   temp: number;
   humidite: number;
   pression: number;
-  powerFactor: number;
+
+  // Coût (FEATURE 4 – Tarification HP/HC Maroc)
   costPerHour: number;
-  normalKw: number;
-  deviation?: number;
+  tarifKwh?: number;
+  trancheHoraire?: 'HEURES_PLEINES' | 'HEURES_CREUSES' | string;
+  conseilTarif?: string;
+
+  // CO₂ (FEATURE 2)
+  co2ParHeure?: number;
+  co2ParJour?: number;
+  co2Economise?: number;
+
+  // Maintenance prédictive (FEATURE 1)
+  scoreUsure?: number;
+  prochaineMaintenance?: string;
+  dureeVieEstimee?: number;
+
+  // Dérive lente (FEATURE 3)
+  driftPct?: number;
+  driftAlerte?: boolean;
+  driftMessage?: string;
+
+  // Hors production (FEATURE 7)
+  horsProduction?: boolean;
+
+  // Détection anomalie
   isAnomaly?: boolean;
+  anomalyType?: string;
   severity?: string;
   scenario: string;
+
+  // Status interne dashboard
   status: MachineStatus;
   anomaly: boolean;
-  anomalyType?: string;
   cause?: string;
-  potRaw: number;
+
+  // Capteur IoT optionnel
+  potRaw?: number;
   wifi_rssi: number;
   relay: boolean;
-  cooldown_remaining: number | null; // cooldown in seconds, null if none
+  cooldown_remaining: number | null;
 }
 
+// ─── Série historique pour le graphique ───────────────────────────────────────
 export interface Reading {
-  t: string; // ISO string or time string e.g. "14:14:00"
+  t: string;
   kw: number;
   status?: MachineStatus;
 }
 
+// ─── Journal d'activité ───────────────────────────────────────────────────────
 export interface EventLogItem {
   id: string;
   time: string;
   tag: 'NOMINAL' | 'AVERTISSEMENT' | 'CRITIQUE' | 'resolved';
   machineId: string;
   message: string;
-  was_real_anomaly?: boolean | null; // null = pending review, true = confirmed, false = dismissed
+  was_real_anomaly?: boolean | null;
 }
 
+// ─── KPIs tableau de bord ─────────────────────────────────────────────────────
 export interface KPIs {
-  waste_avoided: number; // in MAD
-  time_to_detection: number; // average time in seconds
-  anomalies_this_week: number; // total count
-  false_alert_rate: number; // percentage (0 - 100)
-  fleet_uptime: number; // percentage (0 - 100)
+  coutEvite: number;             // MAD économisés
+  tempsDetection: number;        // secondes moyen
+  anomaliesSemaine: number;      // total confirmées
+  tauxFaussesAlertes: number;    // % (0-100)
+  disponibiliteFlotte: number;   // % (0-100)
+  co2Evite: number;              // kg CO₂ économisés
+  scoreUsureMoyen: number;       // 0-100
 }
 
-// --- Agent / Webhook Recommendation Payload ---
-
+// ─── Recommandation Agent IA (webhook payload) ────────────────────────────────
 export interface AgentNode {
   id: string;
   type: 'trigger' | 'action' | 'display' | 'agent' | 'agent-llm' | 'utility' | string;
@@ -74,9 +114,9 @@ export interface AgentEdge {
 }
 
 export interface AgentRecommendation {
-  id: string;                  // unique per recommendation
-  receivedAt: string;          // ISO timestamp when panel received it
-  machineId: string;           // which machine triggered this
+  id: string;
+  receivedAt: string;
+  machineId: string;
   nodes: AgentNode[];
   edges: AgentEdge[];
   isRead: boolean;

@@ -14,11 +14,13 @@ function App() {
   const [selectedMachineId, setSelectedMachineId] = useState<string>('COMP-01');
   const [events, setEvents] = useState<EventLogItem[]>([]);
   const [kpis, setKpis] = useState<KPIs>({
-    waste_avoided: 0,
-    time_to_detection: 0,
-    anomalies_this_week: 0,
-    false_alert_rate: 0,
-    fleet_uptime: 100,
+    coutEvite: 0,
+    tempsDetection: 0,
+    anomaliesSemaine: 0,
+    tauxFaussesAlertes: 0,
+    disponibiliteFlotte: 100,
+    co2Evite: 0,
+    scoreUsureMoyen: 0,
   });
 
   // Agent recommendation panel state
