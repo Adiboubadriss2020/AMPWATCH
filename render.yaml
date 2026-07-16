@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ampwatch-relay
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.cjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true
