@@ -27,8 +27,8 @@ export const HeroChart: React.FC<HeroChartProps> = ({
     pression,
     powerFactor,
     costPerHour,
-    wifi_rssi,
-    relay,
+    wifi_rssi: _wifi_rssi,
+    relay: _relay,
     anomalyType,
   } = machine;
 
@@ -122,11 +122,11 @@ export const HeroChart: React.FC<HeroChartProps> = ({
     series.length - 1
   ];
 
-  // Helper to format WiFi signal strength
-  const wifiLabel = wifi_rssi > -60 ? 'Excellent (📶)'
-    : wifi_rssi > -70 ? 'Good (📶)'
-    : wifi_rssi > -80 ? 'Fair (📶)'
-    : 'Weak (📶)';
+  // Helper to format WiFi signal strength (reserved for when WiFi metric is re-enabled)
+  // const wifiLabel = wifi_rssi > -60 ? 'Excellent (📶)'
+  //   : wifi_rssi > -70 ? 'Good (📶)'
+  //   : wifi_rssi > -80 ? 'Fair (📶)'
+  //   : 'Weak (📶)';
 
   return (
     <div 

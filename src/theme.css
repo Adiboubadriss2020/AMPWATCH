@@ -254,3 +254,126 @@ input:focus-visible {
   background-size: 40px 40px;
   background-position: -1px -1px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE LAYOUT
+═══════════════════════════════════════════════════════════════ */
+
+/* Main dashboard grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 300px) 1fr minmax(260px, 280px);
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  flex-grow: 1;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg-alpha);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.header-brand-subtitle {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Simulation control bar body */
+.sim-control-body {
+  padding: 1rem 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* ─── Tablet (≤ 1024px) ────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(240px, 260px) 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  /* KPI panel goes full-width on second row */
+  #impact-kpis {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ─── Mobile (≤ 768px) ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  #fleet-list,
+  #telemetry-hero,
+  #impact-kpis {
+    grid-column: 1 / -1;
+  }
+
+  .app-header {
+    padding: 0.65rem 0.875rem;
+  }
+
+  .header-brand-subtitle {
+    display: none; /* hide tagline on small screens */
+  }
+
+  .header-actions .live-badge {
+    display: none; /* hide ws badge on mobile */
+  }
+
+  .sim-control-body {
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+}
+
+/* ─── Small Mobile (≤ 480px) ────────────────────────────────────── */
+@media (max-width: 480px) {
+  html, body { font-size: 13px; }
+
+  .dashboard-grid { padding: 0.5rem; gap: 0.5rem; }
+
+  .app-header {
+    padding: 0.5rem 0.75rem;
+  }
+}

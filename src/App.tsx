@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { mockTelemetryService } from './mockService';
-import { mqttSensorService } from './mqttService';
+// import { mqttSensorService } from './mqttService'; // Uncomment when switching to live MQTT
 import type { Machine, Reading, EventLogItem, KPIs, AgentRecommendation } from './types';
 import { MachineCard } from './components/MachineCard';
 import { HeroChart } from './components/HeroChart';
@@ -159,21 +159,8 @@ function App() {
       }}
     >
       {/* Header bar */}
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '0.85rem 1.5rem',
-          borderBottom: '1px solid var(--color-border)',
-          backgroundColor: 'var(--color-bg-alpha)',
-          backdropFilter: 'blur(10px)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <header className="app-header">
+        <div className="header-brand">
           <div 
             style={{ 
               width: '14px', 
@@ -197,14 +184,14 @@ function App() {
             AMPWATCH
           </h1>
           <span style={{ color: 'var(--color-hairline)', fontSize: '0.85rem' }}>|</span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--color-muted)', fontWeight: 500 }}>
+          <span className="header-brand-subtitle">
             Factory Machine Overconsumption Detector
           </span>
         </div>
 
         {/* Live status badge + Notification bell */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="header-actions">
+          <div className="live-badge">
             <span 
               style={{
                 width: '6px',
@@ -316,17 +303,7 @@ function App() {
       </header>
 
       {/* Main Grid Layout */}
-      <main
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(280px, 300px) 1fr minmax(260px, 280px)',
-          gap: '1rem',
-          padding: '1rem 1.5rem',
-          flexGrow: 1,
-          width: '100%',
-          boxSizing: 'border-box',
-        }}
-      >
+      <main className="dashboard-grid">
         {/* Left Column: Fleet List (Section 2.1) & Live Activity Journal */}
         <section 
           id="fleet-list"

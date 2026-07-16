@@ -72,16 +72,7 @@ export const SimulationControl: React.FC<SimulationControlProps> = ({ machines, 
       </div>
 
       {/* Control Body */}
-      <div 
-        style={{
-          padding: '1rem 2rem',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1.5rem',
-        }}
-      >
+      <div className="sim-control-body" style={{ justifyContent: 'space-between' }}>
         {/* Machine selection and injection */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <label style={{ fontSize: '0.85rem', color: 'var(--color-muted)', fontWeight: 600 }}>
