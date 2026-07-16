@@ -119,7 +119,7 @@ export const SimulationControl: React.FC<SimulationControlProps> = ({ machines, 
               fontWeight: 600,
             }}
           >
-            Inject Avertissement (+35%)
+            Inject Warning (+35%)
           </button>
 
           <button
@@ -134,7 +134,7 @@ export const SimulationControl: React.FC<SimulationControlProps> = ({ machines, 
               fontWeight: 600,
             }}
           >
-            Inject Anomalie (+75%)
+            Inject Anomaly (+75%)
           </button>
 
           <button

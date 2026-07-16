@@ -82,7 +82,8 @@ function computeFields(
   let anomalyType = 'NONE';
   let severity    = 'NORMAL';
 
-  if (kw > normalKw * 1.05) {
+  // Regle 1 : Surconsommation > 115%
+  if (kw > normalKw * 1.15) {
     isAnomaly = true; anomalyType = 'SURCONSOMMATION';
     severity  = kw > normalKw * 1.5 ? 'CRITIQUE' : 'ATTENTION';
   }
