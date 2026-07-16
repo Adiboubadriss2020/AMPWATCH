@@ -69,62 +69,62 @@ export const KPIPanel: React.FC<KPIPanelProps> = ({ kpis }) => {
       className="panel"
       style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0', overflow: 'hidden' }}
     >
-      {/* En-tête */}
+      {/* Header */}
       <div style={{ padding: '0.625rem 0.875rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text)', letterSpacing: '0.01em' }}>
-          Indicateurs d'Impact
+          Impact Metrics
         </span>
         <span style={{ fontSize: '0.6rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           LIVE
         </span>
       </div>
 
-      {/* Lignes KPI */}
+      {/* KPI Rows */}
       <div style={{ padding: '0 0.875rem', flexGrow: 1, overflowY: 'auto' }}>
         <KPIRow
-          label="Coût Évité"
+          label="Avoided Cost"
           value={`${coutEvite.toFixed(2)} MAD`}
-          sub="Dérive × durée × tarif HP/HC"
+          sub="Drift × duration × tariff (HP/HC)"
           accent="var(--color-nominal)"
         />
         <KPIRow
-          label="CO₂ Économisé"
+          label="CO₂ Prevented"
           value={`${co2Evite.toFixed(3)} kg`}
-          sub={`Mix électrique Maroc · 0.7 kg/kWh`}
+          sub={`Morocco Grid mix · 0.7 kg/kWh`}
           accent="var(--color-blue)"
         />
         <KPIRow
-          label="Disponibilité Flotte"
+          label="Fleet Availability"
           value={`${disponibiliteFlotte.toFixed(1)}%`}
-          sub="Temps en fonctionnement nominal"
+          sub="Time spent operating normally"
           accent={dispoColor}
-          rightBadge={disponibiliteFlotte >= 95 ? '✓ Bon' : disponibiliteFlotte >= 80 ? '⚠ Attention' : '✗ Critique'}
+          rightBadge={disponibiliteFlotte >= 95 ? '✓ Good' : disponibiliteFlotte >= 80 ? '⚠ Warning' : '✗ Critical'}
           badgeColor={dispoColor}
         />
         <KPIRow
-          label="Score Usure Moyen"
+          label="Avg Wear Score"
           value={`${scoreUsureMoyen} / 100`}
-          sub={scoreUsureMoyen > 60 ? 'Maintenance à planifier' : 'Usure normale'}
+          sub={scoreUsureMoyen > 60 ? 'Maintenance scheduled' : 'Normal wear'}
           accent={scoreColor}
         />
         <KPIRow
-          label="Délai de Détection"
+          label="Detection Delay"
           value={`${tempsDetection.toFixed(1)} s`}
-          sub="Anomalie → alerte responsable"
+          sub="Anomaly → manager notification"
           accent="var(--color-text)"
         />
         <KPIRow
-          label="Fausses Alertes"
+          label="False Alerts Rate"
           value={`${tauxFaussesAlertes}%`}
-          sub="Alertes rejetées / total validées"
+          sub="Dismissed vs. confirmed warnings"
           accent={tauxFaussesAlertes > 25 ? 'var(--color-warning)' : 'var(--color-text)'}
         />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0' }}>
           <div>
             <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-sub)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>
-              Anomalies Actives
+              Active Anomalies
             </div>
-            <div style={{ fontSize: '0.625rem', color: 'var(--color-text-dim)', marginTop: '1px' }}>Hors alertes rejetées</div>
+            <div style={{ fontSize: '0.625rem', color: 'var(--color-text-dim)', marginTop: '1px' }}>Excludes dismissed alerts</div>
           </div>
           <span className="mono" style={{ fontSize: '1rem', fontWeight: 600, color: anomaliesSemaine > 0 ? 'var(--color-critical)' : 'var(--color-text)' }}>
             {anomaliesSemaine}
@@ -132,9 +132,9 @@ export const KPIPanel: React.FC<KPIPanelProps> = ({ kpis }) => {
         </div>
       </div>
 
-      {/* Pied */}
+      {/* Footer */}
       <div style={{ padding: '0.4rem 0.875rem', borderTop: '1px solid var(--color-border)', fontSize: '0.6rem', color: 'var(--color-text-dim)', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-        Tarif HP 0.15 · HC 0.08 DH/kWh
+        Tariff Peak 0.15 · Off-Peak 0.08 DH/kWh
       </div>
     </div>
   );

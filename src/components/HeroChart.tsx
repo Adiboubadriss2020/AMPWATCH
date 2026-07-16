@@ -30,7 +30,6 @@ export const HeroChart: React.FC<HeroChartProps> = ({
     wifi_rssi,
     relay,
     anomalyType,
-    cause,
   } = machine;
 
   // Handle resizing of the container to make chart responsive
@@ -125,9 +124,9 @@ export const HeroChart: React.FC<HeroChartProps> = ({
 
   // Helper to format WiFi signal strength
   const wifiLabel = wifi_rssi > -60 ? 'Excellent (📶)'
-    : wifi_rssi > -70 ? 'Bon (📶)'
-    : wifi_rssi > -80 ? 'Moyen (📶)'
-    : 'Faible (📶)';
+    : wifi_rssi > -70 ? 'Good (📶)'
+    : wifi_rssi > -80 ? 'Fair (📶)'
+    : 'Weak (📶)';
 
   return (
     <div 
@@ -139,241 +138,182 @@ export const HeroChart: React.FC<HeroChartProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '0.75rem',
-        padding: '1rem',
-        marginBottom: '1rem'
       }}
     >
-      {/* Title block */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.25rem' }}>
+      {/* Chart Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--color-text)' }}>
-            Fichier Télémétrie Capteur
-          </h3>
-          <span style={{ fontSize: '0.8rem', color: 'var(--color-muted)' }}>
-            Machine: <span style={{ color: 'var(--color-blue)', fontWeight: 600 }}>{machineId}</span> · {machineName}
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-sub)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>
+            Live Telemetry
           </span>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {machineId} 
+            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-sub)', fontWeight: 500 }}>
+              ({machineName})
+            </span>
+          </h2>
         </div>
-        
-        {/* Legend */}
-        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <span style={{ display: 'inline-block', width: '12px', height: '6px', backgroundColor: 'rgba(62, 142, 255, 0.04)', border: '1px dashed var(--color-blue)', borderRadius: '2px' }} />
-            <span>Normal Limit ({baselineMin}-{baselineMax} kW)</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <span style={{ display: 'inline-block', width: '12px', height: '3px', backgroundColor: 'var(--color-blue)', borderRadius: '2px' }} />
-            <span>Nominal</span>
-          </div>
-          {hasAnomaly && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <span style={{ display: 'inline-block', width: '12px', height: '3px', backgroundColor: 'var(--color-red)', borderRadius: '2px' }} />
-              <span>Surcharge</span>
-            </div>
-          )}
+
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-nominal)', backgroundColor: 'var(--color-green-dim)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+            ● Active Ingestion
+          </span>
         </div>
       </div>
 
-      {/* SVG Canvas Area */}
-      <div style={{ width: '100%', height: `${height}px`, position: 'relative' }}>
+      {/* SVG Interactive Chart */}
+      <div 
+        style={{ position: 'relative', width: '100%', height: `${height}px` }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         <svg 
-          width="100%" 
-          height="100%" 
-          style={{ overflow: 'visible' }}
+          width={width} 
+          height={height} 
+          style={{ overflow: 'visible', width: '100%', height: '100%' }}
         >
-          <defs>
-            <linearGradient id="blueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="var(--color-blue)" stopOpacity="1" />
-              <stop offset="100%" stopColor="var(--color-blue)" stopOpacity="0.8" />
-            </linearGradient>
-            <linearGradient id="redGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="var(--color-red)" stopOpacity="1" />
-              <stop offset="100%" stopColor="var(--color-red)" stopOpacity="0.8" />
-            </linearGradient>
-          </defs>
-
-          {/* Shaded Horizontal Baseline Band */}
-          {yMin < baselineMax && yMax > baselineMin && (
-            <rect
-              x={padding.left}
-              y={Math.max(padding.top, getY(baselineMax))}
-              width={plotWidth}
-              height={Math.min(plotHeight, getY(baselineMin) - getY(baselineMax))}
-              fill="rgba(62, 142, 255, 0.03)"
-              stroke="rgba(62, 142, 255, 0.15)"
-              strokeWidth="1"
-              strokeDasharray="4 4"
+          {/* Subtle Horizontal Grid lines */}
+          {uniqueTicks.map((tick, idx) => (
+            <line
+              key={idx}
+              x1={padding.left}
+              y1={getY(tick)}
+              x2={width - padding.right}
+              y2={getY(tick)}
+              stroke="var(--color-border)"
+              strokeWidth={1}
+              strokeDasharray="3 3"
             />
-          )}
+          ))}
 
-          {/* Horizontal Grid lines */}
-          {uniqueTicks.map((val) => {
-            const y = getY(val);
-            const isBaseline = val === baselineMin || val === baselineMax;
-            return (
-              <g key={val}>
-                <line
-                  x1={padding.left}
-                  y1={y}
-                  x2={width - padding.right}
-                  y2={y}
-                  stroke={isBaseline ? 'rgba(62, 142, 255, 0.2)' : 'var(--color-hairline)'}
-                  strokeWidth={isBaseline ? '1.2' : '1'}
-                  strokeDasharray={isBaseline ? 'none' : '2 4'}
-                />
-                <text
-                  x={padding.left - 8}
-                  y={y + 4}
-                  textAnchor="end"
-                  className="timestamp"
-                  fill={isBaseline ? 'var(--color-blue)' : 'var(--color-muted)'}
-                  style={{ fontSize: '0.75rem', fontWeight: isBaseline ? 600 : 400 }}
-                >
-                  {val.toFixed(0)} kW
-                </text>
-              </g>
-            );
-          })}
+          {/* Baseline Safe Zone shading */}
+          <rect
+            x={padding.left}
+            y={getY(baselineMax)}
+            width={plotWidth}
+            height={Math.max(0, getY(baselineMin) - getY(baselineMax))}
+            fill="rgba(34, 197, 94, 0.03)"
+          />
 
-          {/* X Axis Timestamps */}
+          {/* Target Baseline lines */}
+          <line
+            x1={padding.left}
+            y1={getY(baselineMax)}
+            x2={width - padding.right}
+            y2={getY(baselineMax)}
+            stroke="var(--color-border-hi)"
+            strokeWidth={1}
+            strokeDasharray="2 2"
+          />
+          <line
+            x1={padding.left}
+            y1={getY(baselineMin)}
+            x2={width - padding.right}
+            y2={getY(baselineMin)}
+            stroke="var(--color-border-hi)"
+            strokeWidth={1}
+            strokeDasharray="2 2"
+          />
+
+          {/* Left Y-axis values */}
+          {uniqueTicks.map((tick, idx) => (
+            <text
+              key={idx}
+              x={padding.left - 8}
+              y={getY(tick) + 4}
+              textAnchor="end"
+              fill="var(--color-text-sub)"
+              style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)' }}
+            >
+              {tick.toFixed(0)} kW
+            </text>
+          ))}
+
+          {/* Bottom X-axis labels */}
           {xLabelIndices.map((idx) => {
             if (idx >= series.length) return null;
-            const x = getX(idx);
             return (
-              <g key={idx}>
-                <line
-                  x1={x}
-                  y1={padding.top}
-                  x2={x}
-                  y2={height - padding.bottom}
-                  stroke="var(--color-hairline)"
-                  strokeWidth="0.5"
-                  strokeDasharray="2 4"
-                />
-                <text
-                  x={x}
-                  y={height - padding.bottom + 18}
-                  textAnchor="middle"
-                  className="timestamp"
-                  fill="var(--color-muted)"
-                  style={{ fontSize: '0.75rem' }}
-                >
-                  {series[idx].t}
-                </text>
-              </g>
+              <text
+                key={idx}
+                x={getX(idx)}
+                y={height - 8}
+                textAnchor="middle"
+                fill="var(--color-text-dim)"
+                style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)' }}
+              >
+                {series[idx].t}
+              </text>
             );
           })}
 
-          {/* Telemetry Line - Nominal Segment (Blue) */}
-          {bluePath && (
+          {/* Nominal line path */}
+          <path
+            d={bluePath}
+            fill="none"
+            stroke="var(--color-blue)"
+            strokeWidth={2}
+          />
+
+          {/* Anomaly line path */}
+          {redPath && (
             <path
-              d={bluePath}
+              d={redPath}
               fill="none"
-              stroke="url(#blueGrad)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              stroke="var(--color-critical)"
+              strokeWidth={2}
+              strokeDasharray="1 1"
             />
           )}
 
-          {/* Telemetry Line - Anomaly Segment (Red) */}
-          {redPath && (
-            <>
-              <path
-                d={redPath}
-                fill="none"
-                stroke="url(#redGrad)"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d={redPath}
-                fill="none"
-                stroke="transparent"
-                strokeWidth="12"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ cursor: 'pointer' }}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-              />
-            </>
-          )}
-
-          {/* Glowing Anomaly Marker */}
+          {/* Anomaly Callout indicator */}
           {hasAnomaly && (
-            <g 
-              style={{ cursor: 'pointer' }}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-            >
-              <circle cx={anomalyX} cy={anomalyY} r="18" fill="transparent" />
+            <>
               <circle
                 cx={anomalyX}
                 cy={anomalyY}
-                r="12"
-                fill="var(--color-red)"
-                opacity="0.25"
-                className="pulse-critical"
-                style={{ transformOrigin: `${anomalyX}px ${anomalyY}px` }}
+                r={6}
+                fill="var(--color-critical)"
+                style={{ animation: 'pulse-ring 1.5s infinite' }}
               />
-              <circle cx={anomalyX} cy={anomalyY} r="6" fill="var(--color-red)" stroke="#0B0E13" strokeWidth="2" />
-              <line
-                x1={anomalyX}
-                y1={anomalyY}
-                x2={anomalyX}
-                y2={padding.top - 10}
-                stroke="var(--color-red)"
-                strokeWidth="1"
-                strokeDasharray="2 2"
-                opacity="0.6"
+              <circle
+                cx={anomalyX}
+                cy={anomalyY}
+                r={3}
+                fill="#ffffff"
               />
-            </g>
+            </>
           )}
         </svg>
 
-        {/* Anomaly Callout Overlay (Section 3.4) */}
-        {hasAnomaly && cause && isHovered && (
-          <div
-            className="panel fade-in"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+        {/* Floating Interactive anomaly diagnosis card (Section 4.1 / Step 8) */}
+        {hasAnomaly && isHovered && (
+          <div 
+            className="fade-in"
             style={{
               position: 'absolute',
-              top: '1rem',
-              right: '1rem',
-              maxWidth: '320px',
-              width: 'calc(100% - 2rem)',
-              padding: '0.85rem',
-              border: '1px solid var(--color-red)',
-              backgroundColor: 'rgba(19, 24, 34, 0.98)',
-              boxShadow: '0 8px 32px rgba(255, 77, 94, 0.35)',
+              top: '10px',
+              left: `${padding.left + 15}px`,
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
               borderRadius: '8px',
-              fontSize: '0.8rem',
-              color: 'var(--color-text)',
+              padding: '0.75rem 1rem',
+              maxWidth: '280px',
+              pointerEvents: 'none',
+              backdropFilter: 'blur(10px)',
               zIndex: 10,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', borderBottom: '1px solid rgba(255, 77, 94, 0.2)', paddingBottom: '0.25rem' }}>
-              <span style={{ fontWeight: 700, color: 'var(--color-red)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>
-                ⚠️ FUSION AI DIAGNOSTIC
-              </span>
-              <span 
-                className="timestamp"
-                style={{ 
-                  fontWeight: 700, 
-                  backgroundColor: 'rgba(255, 77, 94, 0.15)', 
-                  color: 'var(--color-red)', 
-                  padding: '0.1rem 0.35rem', 
-                  borderRadius: '3px',
-                  fontSize: '0.7rem'
-                }}
-              >
-                TYPE: {anomalyType}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem' }}>
+              <span style={{ fontSize: '0.9rem' }}>🚨</span>
+              <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--color-critical)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {anomalyType} Detected
               </span>
             </div>
-            <p style={{ margin: 0, lineHeight: 1.35, color: '#E7ECF3' }}>
-              {cause}
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text)', lineHeight: '1.35' }}>
+              {machineId} has exceeded normal power limit.
+              <br />
+              <strong style={{ color: 'var(--color-text-sub)' }}>Cause:</strong> {machine.cause || 'Unknown deviation'}
             </p>
           </div>
         )}
@@ -392,7 +332,7 @@ export const HeroChart: React.FC<HeroChartProps> = ({
       >
         {/* Metric 1: Current & Voltage */}
         <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Tension / Courant</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Voltage / Current</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
             {voltage} V / {current} A
           </span>
@@ -400,7 +340,7 @@ export const HeroChart: React.FC<HeroChartProps> = ({
 
         {/* Metric 2: Power Factor */}
         <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Facteur Puissance</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Power Factor</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
             {powerFactor.toFixed(2)} (cos φ)
           </span>
@@ -408,7 +348,7 @@ export const HeroChart: React.FC<HeroChartProps> = ({
 
         {/* Metric 3: Temp & Humidity */}
         <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Temp / Humidité</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Temp / Humidity</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
             {temp} °C / {humidite} %
           </span>
@@ -416,7 +356,7 @@ export const HeroChart: React.FC<HeroChartProps> = ({
 
         {/* Metric 4: Pressure */}
         <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Pression</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Pressure</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
             {pression.toFixed(1)} hPa
           </span>
@@ -424,7 +364,7 @@ export const HeroChart: React.FC<HeroChartProps> = ({
 
         {/* Metric 5: Cost per hour */}
         <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Coût Horaire</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Cost / Hour</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-green)', marginTop: '0.15rem' }}>
             {costPerHour.toFixed(2)} MAD/h
           </span>
@@ -432,9 +372,9 @@ export const HeroChart: React.FC<HeroChartProps> = ({
 
         {/* Metric 6: WiFi Signal / Relay */}
         <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Statut WiFi / Relais</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>WiFi / Relay Status</span>
           <span className="mono" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
-            {wifi_rssi} dBm · {wifiLabel} · <span style={{ color: relay ? 'var(--color-red)' : 'var(--color-muted)' }}>{relay ? 'DISJONCTÉ' : 'NOMINAL'}</span>
+            {wifi_rssi} dBm · {wifiLabel} · <span style={{ color: relay ? 'var(--color-red)' : 'var(--color-muted)' }}>{relay ? 'TRIPPED' : 'NOMINAL'}</span>
           </span>
         </div>
       </div>

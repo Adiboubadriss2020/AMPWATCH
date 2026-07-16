@@ -20,7 +20,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
       }}
     >
       <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1.1rem', borderBottom: '1px solid var(--color-hairline)', paddingBottom: '0.5rem' }}>
-        Journal d'Activité en Direct
+        Live Activity Log
       </h3>
 
       <div 
@@ -35,7 +35,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
       >
         {events.length === 0 ? (
           <div style={{ color: 'var(--color-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '2rem' }}>
-            Aucun événement récent. Flotte en fonctionnement nominal.
+            No recent events. Fleet operating normally.
           </div>
         ) : (
           events.map((evt) => {
@@ -50,15 +50,15 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
             if (isCritique) {
               badgeBg = 'rgba(255, 77, 94, 0.1)';
               badgeColor = 'var(--color-red)';
-              badgeLabel = 'CRITIQUE';
+              badgeLabel = 'CRITICAL';
             } else if (isAvertissement) {
               badgeBg = 'rgba(242, 174, 61, 0.1)';
               badgeColor = 'var(--color-amber)';
-              badgeLabel = 'AVERTISSEMENT';
+              badgeLabel = 'WARNING';
             } else if (isResolved) {
               badgeBg = 'rgba(47, 217, 140, 0.1)';
               badgeColor = 'var(--color-green)';
-              badgeLabel = 'RÉSOLU';
+              badgeLabel = 'RESOLVED';
             }
 
             return (
@@ -119,7 +119,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                     }}
                   >
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginRight: 'auto' }}>
-                      Validation Responsable Énergie:
+                      Energy Manager Validation:
                     </span>
 
                     {evt.was_real_anomaly == null ? (
@@ -144,7 +144,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                             e.currentTarget.style.backgroundColor = 'transparent';
                           }}
                         >
-                          Rejeter (Fausse Alerte)
+                          Dismiss (False Alert)
                         </button>
                         <button
                           onClick={() => onConfirm(evt.id, true)}
@@ -167,16 +167,16 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                             e.currentTarget.style.color = 'var(--color-blue)';
                           }}
                         >
-                          Confirmer Anomalie
+                          Confirm Anomaly
                         </button>
                       </>
                     ) : evt.was_real_anomaly ? (
                       <span style={{ color: 'var(--color-green)', fontWeight: 600, fontSize: '0.75rem' }}>
-                        ✓ Anomalie Confirmée
+                        ✓ Anomaly Confirmed
                       </span>
                     ) : (
                       <span style={{ color: 'var(--color-muted)', textDecoration: 'line-through', fontSize: '0.75rem' }}>
-                        ✗ Fausse Alerte Rejetée
+                        ✗ False Alert Dismissed
                       </span>
                     )}
                   </div>

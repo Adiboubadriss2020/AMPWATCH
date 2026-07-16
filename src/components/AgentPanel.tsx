@@ -77,7 +77,7 @@ function NodeCard({ node }: { node: AgentNode }) {
               textDecoration: 'underline',
             }}
           >
-            {expanded ? '▲ Masquer les paramètres' : '▼ Voir les paramètres'}
+            {expanded ? '▲ Hide parameters' : '▼ View parameters'}
           </button>
 
           {expanded && (
@@ -145,7 +145,7 @@ function RecommendationCard({
                 textTransform: 'uppercase',
               }}
             >
-              ● NOUVEAU
+              ● NEW
             </span>
           )}
           <span
@@ -160,17 +160,17 @@ function RecommendationCard({
           </span>
         </div>
         <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)' }}>
-          {new Date(rec.receivedAt).toLocaleTimeString('fr-FR')}
+          {new Date(rec.receivedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
         </span>
       </div>
 
       {/* Stats */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-          <b style={{ color: 'var(--color-text)' }}>{rec.nodes.length}</b> nœuds
+          <b style={{ color: 'var(--color-text)' }}>{rec.nodes.length}</b> nodes
         </span>
         <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-          <b style={{ color: 'var(--color-text)' }}>{rec.edges.length}</b> connexions
+          <b style={{ color: 'var(--color-text)' }}>{rec.edges.length}</b> connections
         </span>
       </div>
 
@@ -192,7 +192,7 @@ function RecommendationCard({
           textAlign: 'left',
         }}
       >
-        {expanded ? '▲ Masquer le workflow agent' : '▼ Consulter le workflow agent'}
+        {expanded ? '▲ Hide Agent Workflow' : '▼ View Agent Workflow'}
       </button>
 
       {/* Node list */}
@@ -212,7 +212,7 @@ function RecommendationCard({
               }}
             >
               <p style={{ margin: '0 0 0.4rem 0', fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Connexions ({rec.edges.length})
+                Connections ({rec.edges.length})
               </p>
               {rec.edges.map((e) => (
                 <div key={e.id} style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontFamily: 'var(--font-mono)', lineHeight: 1.6 }}>
@@ -279,10 +279,10 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ recommendations, isOpen,
         >
           <div>
             <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)' }}>
-              🤖 Recommandations Agent IA
+              🤖 AI Agent Recommendations
             </h2>
             <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-              Workflows déclenchés lors d'anomalies détectées
+              Workflows triggered upon anomaly detection
             </p>
           </div>
           <button
@@ -319,7 +319,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ recommendations, isOpen,
               flexShrink: 0,
             }}
           >
-            {unread} nouvelle{unread > 1 ? 's' : ''} recommandation{unread > 1 ? 's' : ''} non lue{unread > 1 ? 's' : ''}
+            {unread} new unread recommendation{unread > 1 ? 's' : ''}
           </div>
         )}
 
@@ -340,9 +340,9 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ recommendations, isOpen,
             >
               <span style={{ fontSize: '2.5rem' }}>🤖</span>
               <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5 }}>
-                Aucune recommandation pour l'instant.
+                No recommendations for now.
                 <br />
-                Les analyses IA apparaîtront ici lors d'anomalies.
+                AI analyses will appear here during anomalies.
               </p>
             </div>
           ) : (
