@@ -10,12 +10,12 @@ interface AgentPanelProps {
 
 // Map node type → color + emoji label
 const NODE_TYPE_META: Record<string, { color: string; bg: string }> = {
-  trigger:   { color: 'var(--color-blue)',  bg: 'rgba(62,142,255,0.1)' },
-  action:    { color: 'var(--color-amber)', bg: 'rgba(242,174,61,0.1)' },
+  trigger:   { color: 'var(--color-blue)',  bg: 'var(--color-blue-dim)' },
+  action:    { color: 'var(--color-amber)', bg: 'var(--color-amber-dim)' },
   'agent-llm': { color: '#a855f7',          bg: 'rgba(168,85,247,0.1)' },
   agent:     { color: '#a855f7',            bg: 'rgba(168,85,247,0.1)' },
-  display:   { color: 'var(--color-muted)', bg: 'rgba(124,135,152,0.1)' },
-  utility:   { color: 'var(--color-green)', bg: 'rgba(47,217,140,0.1)' },
+  display:   { color: 'var(--color-text-sub)', bg: 'var(--color-bg-subtle)' },
+  utility:   { color: 'var(--color-green)', bg: 'var(--color-green-dim)' },
 };
 
 function NodeCard({ node }: { node: AgentNode }) {
@@ -84,7 +84,7 @@ function NodeCard({ node }: { node: AgentNode }) {
               style={{
                 marginTop: '0.5rem',
                 padding: '0.5rem',
-                backgroundColor: 'rgba(0,0,0,0.25)',
+                backgroundColor: 'var(--color-bg-subtle)',
                 borderRadius: '6px',
                 fontSize: '0.7rem',
                 color: 'var(--color-text)',
@@ -120,11 +120,11 @@ function RecommendationCard({
   return (
     <div
       style={{
-        border: `1px solid ${rec.isRead ? 'var(--color-hairline)' : 'rgba(255,77,94,0.4)'}`,
+        border: `1px solid ${rec.isRead ? 'var(--color-border)' : 'var(--color-red)'}`,
         borderRadius: '10px',
         padding: '0.85rem',
         marginBottom: '0.85rem',
-        backgroundColor: rec.isRead ? 'rgba(25,32,45,0.4)' : 'rgba(255,77,94,0.04)',
+        backgroundColor: rec.isRead ? 'var(--color-overlay)' : 'var(--color-red-dim)',
         transition: 'border-color 0.3s',
       }}
     >
@@ -205,7 +205,7 @@ function RecommendationCard({
               style={{
                 marginTop: '0.5rem',
                 padding: '0.5rem 0.65rem',
-                backgroundColor: 'rgba(25,32,45,0.5)',
+                backgroundColor: 'var(--color-bg-subtle)',
                 borderRadius: '6px',
                 border: '1px solid var(--color-hairline)',
               }}
@@ -240,7 +240,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ recommendations, isOpen,
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.45)',
+            backgroundColor: 'var(--color-shadow)',
             zIndex: 200,
             backdropFilter: 'blur(2px)',
           }}
@@ -255,9 +255,9 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ recommendations, isOpen,
           right: 0,
           bottom: 0,
           width: 'min(420px, 92vw)',
-          backgroundColor: 'rgba(13,17,27,0.98)',
-          borderLeft: '1px solid var(--color-hairline)',
-          boxShadow: '-12px 0 48px rgba(0,0,0,0.6)',
+          backgroundColor: 'var(--color-surface)',
+          borderLeft: '1px solid var(--color-border)',
+          boxShadow: '-12px 0 48px var(--color-shadow)',
           zIndex: 201,
           display: 'flex',
           flexDirection: 'column',

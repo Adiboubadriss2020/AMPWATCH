@@ -11,13 +11,13 @@ const STATUS_CONFIG = {
   CRITIQUE: {
     color: 'var(--color-critical)',
     bg: 'var(--color-red-dim)',
-    border: 'rgba(239,68,68,0.35)',
+    border: 'var(--color-red)',
     label: 'CRITIQUE',
   },
   AVERTISSEMENT: {
     color: 'var(--color-warning)',
     bg: 'var(--color-amber-dim)',
-    border: 'rgba(245,158,11,0.35)',
+    border: 'var(--color-amber)',
     label: 'ATTENTION',
   },
   NOMINAL: {
@@ -146,7 +146,7 @@ export const MachineCard: React.FC<MachineCardProps> = ({ machine, isSelected, o
             gap: '0.4rem',
             padding: '0.25rem 0.4rem',
             backgroundColor: 'var(--color-amber-dim)',
-            border: '1px solid rgba(245,158,11,0.2)',
+            border: '1px solid var(--color-amber)',
             borderRadius: 'var(--r-sm)',
             fontSize: '0.68rem',
             color: 'var(--color-amber)',

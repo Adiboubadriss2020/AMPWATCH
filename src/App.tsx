@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { mockTelemetryService } from './mockService';
+import { mqttSensorService } from './mqttService';
 import type { Machine, Reading, EventLogItem, KPIs, AgentRecommendation } from './types';
 import { MachineCard } from './components/MachineCard';
 import { HeroChart } from './components/HeroChart';
@@ -35,6 +36,9 @@ function App() {
     anomaly_index: number;
   } | null>(null);
 
+  // Theme state
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
+
   // Load initial data
   useEffect(() => {
     const initialMachines = mockTelemetryService.getMachines();
@@ -54,7 +58,7 @@ function App() {
     setActiveHistory(history);
   }, [selectedMachineId, machines]);
 
-  // Subscribe to live WebSocket-like telemetry events
+  // Subscribe to live WebSocket-like telemetry events (Simulator)
   useEffect(() => {
     const unsubscribe = mockTelemetryService.subscribeTelemetry((message) => {
       if (message.type === 'reading') {
@@ -74,6 +78,34 @@ function App() {
       unsubscribe();
     };
   }, []);
+
+  /* 
+  // TO USE REAL HARDWARE MQTT, UNCOMMENT THIS BLOCK AND COMMENT THE ONE ABOVE:
+  useEffect(() => {
+    mqttSensorService.connect((machine: Machine) => {
+      setMachines((prev) => {
+        const index = prev.findIndex(m => m.machineId === machine.machineId);
+        if (index >= 0) {
+          const next = [...prev];
+          next[index] = machine;
+          return next;
+        }
+        return [...prev, machine];
+      });
+      setKpis(mockTelemetryService.getKPIs());
+      setEvents(mockTelemetryService.getRecentEvents());
+    });
+
+    return () => {
+      mqttSensorService.disconnect();
+    };
+  }, []);
+  */
+
+  // Apply theme to document root
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // Handle alert validation action
   const handleConfirmEvent = (eventId: string, wasReal: boolean) => {
@@ -133,8 +165,8 @@ function App() {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '0.85rem 1.5rem',
-          borderBottom: '1px solid var(--color-hairline)',
-          backgroundColor: 'rgba(19, 24, 34, 0.7)',
+          borderBottom: '1px solid var(--color-border)',
+          backgroundColor: 'var(--color-bg-alpha)',
           backdropFilter: 'blur(10px)',
           position: 'sticky',
           top: 0,
@@ -196,6 +228,31 @@ function App() {
             </span>
           </div>
 
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            title="Toggle Theme"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--color-border)',
+              borderRadius: '8px',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--color-text-sub)',
+              transition: 'all 0.2s',
+            }}
+          >
+            {theme === 'dark' ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            )}
+          </button>
+
           {/* Notification Bell */}
           <button
             id="notification-bell"
@@ -203,8 +260,8 @@ function App() {
             title="AI Agent Recommendations"
             style={{
               position: 'relative',
-              background: agentPanelOpen ? 'rgba(62,142,255,0.15)' : 'rgba(35,43,56,0.5)',
-              border: `1px solid ${recommendations.some(r => !r.isRead) ? 'rgba(255,77,94,0.5)' : 'var(--color-hairline)'}`,
+              background: agentPanelOpen ? 'var(--color-blue-dim)' : 'var(--color-surface-alpha)',
+              border: `1px solid ${recommendations.some(r => !r.isRead) ? 'var(--color-red)' : 'var(--color-border)'}`,
               borderRadius: '8px',
               width: '36px',
               height: '36px',

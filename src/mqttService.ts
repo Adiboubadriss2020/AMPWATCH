@@ -8,9 +8,8 @@
  * And import this file in `src/App.tsx` to switch from the simulation loop to the live broker stream.
  */
 
-/*
 import mqtt from 'mqtt';
-import type { Machine, Reading } from './types';
+import type { Machine } from './types';
 
 // MQTT Client Configuration
 const MQTT_CONFIG = {
@@ -259,5 +258,4 @@ export class MqttSensorService {
 }
 
 export const mqttSensorService = new MqttSensorService();
-*/
 export {};

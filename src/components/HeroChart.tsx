@@ -192,7 +192,8 @@ export const HeroChart: React.FC<HeroChartProps> = ({
             y={getY(baselineMax)}
             width={plotWidth}
             height={Math.max(0, getY(baselineMin) - getY(baselineMax))}
-            fill="rgba(34, 197, 94, 0.03)"
+            fill="var(--color-green-dim)"
+            opacity={0.3}
           />
 
           {/* Target Baseline lines */}
@@ -288,14 +289,12 @@ export const HeroChart: React.FC<HeroChartProps> = ({
         {/* Floating Interactive anomaly diagnosis card (Section 4.1 / Step 8) */}
         {hasAnomaly && isHovered && (
           <div 
-            className="fade-in"
+            className="fade-in panel"
             style={{
               position: 'absolute',
               top: '10px',
               left: `${padding.left + 15}px`,
-              backgroundColor: 'rgba(239, 68, 68, 0.08)',
-              border: '1px solid rgba(239, 68, 68, 0.35)',
-              borderRadius: '8px',
+              borderColor: 'var(--color-red)',
               padding: '0.75rem 1rem',
               maxWidth: '280px',
               pointerEvents: 'none',
@@ -327,56 +326,57 @@ export const HeroChart: React.FC<HeroChartProps> = ({
           gap: '0.5rem',
           marginTop: '0.25rem',
           paddingTop: '0.75rem',
-          borderTop: '1px solid var(--color-hairline)',
+          borderTop: '1px solid var(--color-border)',
         }}
       >
         {/* Metric 1: Current & Voltage */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Voltage / Current</span>
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Voltage / Current</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
             {voltage} V / {current} A
           </span>
         </div>
 
         {/* Metric 2: Power Factor */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Power Factor</span>
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Power Factor</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
             {powerFactor.toFixed(2)} (cos φ)
           </span>
         </div>
 
         {/* Metric 3: Temp & Humidity */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Temp / Humidity</span>
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Temp / Humidity</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
             {temp} °C / {humidite} %
           </span>
         </div>
 
         {/* Metric 4: Pressure */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Pressure</span>
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Pressure</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
             {pression.toFixed(1)} hPa
           </span>
         </div>
 
         {/* Metric 5: Cost per hour */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Cost / Hour</span>
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>Cost / Hour</span>
           <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-green)', marginTop: '0.15rem' }}>
             {costPerHour.toFixed(2)} MAD/h
           </span>
         </div>
 
-        {/* Metric 6: WiFi Signal / Relay */}
-        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'rgba(35, 43, 56, 0.2)', borderRadius: '6px', border: '1px solid rgba(35, 43, 56, 0.5)' }}>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase' }}>WiFi / Relay Status</span>
+        {/* Metric 6: WiFi Signal / Relay 
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem', backgroundColor: 'var(--color-overlay)', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>WiFi / Relay Status</span>
           <span className="mono" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text)', marginTop: '0.15rem' }}>
-            {wifi_rssi} dBm · {wifiLabel} · <span style={{ color: relay ? 'var(--color-red)' : 'var(--color-muted)' }}>{relay ? 'TRIPPED' : 'NOMINAL'}</span>
+            {wifi_rssi} dBm · {wifiLabel} · <span style={{ color: relay ? 'var(--color-red)' : 'var(--color-text-dim)' }}>{relay ? 'TRIPPED' : 'NOMINAL'}</span>
           </span>
         </div>
+        */}
       </div>
     </div>
   );

@@ -8,8 +8,11 @@
   --color-bg:        #0e1117;   /* deep charcoal, not pure black */
   --color-surface:   #161b25;   /* panel surface */
   --color-overlay:   #1c2332;   /* hover / raised surface */
+  --color-bg-subtle: #131822;   /* slightly elevated */
   --color-border:    #252d3d;   /* default border */
   --color-border-hi: #2e3a50;   /* highlighted border */
+  --color-hairline:  #1e2532;   /* very subtle border */
+  --color-shadow:    rgba(0,0,0,0.5);
 
   /* ─── Text ───────────────────────────────────────────────────── */
   --color-text:      #e2e8f0;   /* primary text — readable but not stark white */
@@ -26,11 +29,46 @@
   --color-red:       #ef4444;   /* critical */
   --color-red-dim:   rgba(239, 68, 68, 0.12);
 
+  /* Alpha for glassmorphism */
+  --color-bg-alpha:  rgba(14, 17, 23, 0.85);
+  --color-surface-alpha: rgba(22, 27, 37, 0.6);
+
   /* ─── Semantic aliases ───────────────────────────────────────── */
   --color-nominal:  var(--color-green);
   --color-warning:  var(--color-amber);
   --color-critical: var(--color-red);
   --color-brand:    var(--color-blue);
+}
+
+[data-theme='light'] {
+  /* ─── Base Palette ───────────────────────────────────────────── */
+  --color-bg:        #f8fafc;   /* clean slate background */
+  --color-surface:   #ffffff;   /* white panels */
+  --color-overlay:   #f1f5f9;   /* subtle hover */
+  --color-bg-subtle: #e2e8f0;   /* slightly elevated */
+  --color-border:    #e2e8f0;   /* soft border */
+  --color-border-hi: #cbd5e1;   /* highlighted border */
+  --color-hairline:  #f1f5f9;   /* very subtle border */
+  --color-shadow:    rgba(0,0,0,0.1);
+
+  /* ─── Text ───────────────────────────────────────────────────── */
+  --color-text:      #0f172a;   /* sharp dark text */
+  --color-text-sub:  #64748b;   /* secondary labels */
+  --color-text-dim:  #94a3b8;   /* disabled */
+
+  /* ─── Accent (adjusted for light mode contrast) ──────────────── */
+  --color-blue:      #2563eb;
+  --color-blue-dim:  rgba(37, 99, 235, 0.1);
+  --color-green:     #16a34a;
+  --color-green-dim: rgba(22, 163, 74, 0.1);
+  --color-amber:     #d97706;
+  --color-amber-dim: rgba(217, 119, 6, 0.1);
+  --color-red:       #dc2626;
+  --color-red-dim:   rgba(220, 38, 38, 0.1);
+
+  /* Alpha for glassmorphism */
+  --color-bg-alpha:  rgba(248, 250, 252, 0.85);
+  --color-surface-alpha: rgba(255, 255, 255, 0.6);
 
   /* ─── Typography ─────────────────────────────────────────────── */
   --font-ui:   'Inter', system-ui, sans-serif;
@@ -141,7 +179,7 @@ input:focus-visible {
 ═══════════════════════════════════════════════════════════════ */
 .label-caps {
   font-size: 0.6875rem;   /* 11px */
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-sub);

@@ -43,20 +43,20 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
             const isAvertissement = evt.tag === 'AVERTISSEMENT';
             const isResolved = evt.tag === 'resolved';
 
-            let badgeBg = 'rgba(124, 135, 152, 0.1)';
-            let badgeColor = 'var(--color-muted)';
+            let badgeBg = 'var(--color-overlay)';
+            let badgeColor = 'var(--color-text-sub)';
             let badgeLabel: string = evt.tag;
 
             if (isCritique) {
-              badgeBg = 'rgba(255, 77, 94, 0.1)';
+              badgeBg = 'var(--color-red-dim)';
               badgeColor = 'var(--color-red)';
               badgeLabel = 'CRITICAL';
             } else if (isAvertissement) {
-              badgeBg = 'rgba(242, 174, 61, 0.1)';
+              badgeBg = 'var(--color-amber-dim)';
               badgeColor = 'var(--color-amber)';
               badgeLabel = 'WARNING';
             } else if (isResolved) {
-              badgeBg = 'rgba(47, 217, 140, 0.1)';
+              badgeBg = 'var(--color-green-dim)';
               badgeColor = 'var(--color-green)';
               badgeLabel = 'RESOLVED';
             }
@@ -68,8 +68,8 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                   display: 'flex',
                   flexDirection: 'column',
                   padding: '0.75rem',
-                  backgroundColor: 'rgba(25, 32, 45, 0.5)',
-                  border: '1px solid var(--color-hairline)',
+                  backgroundColor: 'var(--color-overlay)',
+                  border: '1px solid var(--color-border)',
                   borderRadius: '6px',
                   gap: '0.35rem',
                   fontSize: '0.85rem',
@@ -102,7 +102,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                       <a
                         href="#"
                         title="Export PDF (Google Docs)"
-                        onClick={(e) => { e.preventDefault(); alert("Feature Ready: Link your Google Docs template to download PDF"); }}
+                        onClick={(e) => { e.preventDefault(); window.open('https://docs.google.com/document/d/1_YOUR_GOOGLE_DOC_ID_HERE/edit?usp=sharing', '_blank'); }}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -149,7 +149,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                       gap: '0.5rem', 
                       marginTop: '0.25rem',
                       paddingTop: '0.35rem',
-                      borderTop: '1px dashed rgba(35, 43, 56, 0.5)'
+                      borderTop: '1px dashed var(--color-border)'
                     }}
                   >
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginRight: 'auto' }}>
@@ -171,7 +171,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                           }}
                           onMouseEnter={e => {
                             e.currentTarget.style.borderColor = 'var(--color-text)';
-                            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                            e.currentTarget.style.backgroundColor = 'var(--color-overlay)';
                           }}
                           onMouseLeave={e => {
                             e.currentTarget.style.borderColor = 'var(--color-muted)';
@@ -185,7 +185,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                           style={{
                             padding: '0.2rem 0.5rem',
                             fontSize: '0.75rem',
-                            backgroundColor: 'rgba(62, 142, 255, 0.1)',
+                            backgroundColor: 'var(--color-blue-dim)',
                             border: '1px solid var(--color-blue)',
                             borderRadius: '4px',
                             color: 'var(--color-blue)',
@@ -197,7 +197,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events, onConfirm }) => {
                             e.currentTarget.style.color = '#fff';
                           }}
                           onMouseLeave={e => {
-                            e.currentTarget.style.backgroundColor = 'rgba(62, 142, 255, 0.1)';
+                            e.currentTarget.style.backgroundColor = 'var(--color-blue-dim)';
                             e.currentTarget.style.color = 'var(--color-blue)';
                           }}
                         >
