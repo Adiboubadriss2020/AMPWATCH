@@ -9,13 +9,13 @@ interface AgentPanelProps {
 }
 
 // Map node type → color + emoji label
-const NODE_TYPE_META: Record<string, { color: string; bg: string; icon: string }> = {
-  trigger:   { color: 'var(--color-blue)',  bg: 'rgba(62,142,255,0.1)',  icon: '⚡' },
-  action:    { color: 'var(--color-amber)', bg: 'rgba(242,174,61,0.1)',  icon: '⚙️' },
-  'agent-llm': { color: '#a855f7',          bg: 'rgba(168,85,247,0.1)',  icon: '🧠' },
-  agent:     { color: '#a855f7',            bg: 'rgba(168,85,247,0.1)',  icon: '🤖' },
-  display:   { color: 'var(--color-muted)', bg: 'rgba(124,135,152,0.1)', icon: '📋' },
-  utility:   { color: 'var(--color-green)', bg: 'rgba(47,217,140,0.1)',  icon: '🔀' },
+const NODE_TYPE_META: Record<string, { color: string; bg: string }> = {
+  trigger:   { color: 'var(--color-blue)',  bg: 'rgba(62,142,255,0.1)' },
+  action:    { color: 'var(--color-amber)', bg: 'rgba(242,174,61,0.1)' },
+  'agent-llm': { color: '#a855f7',          bg: 'rgba(168,85,247,0.1)' },
+  agent:     { color: '#a855f7',            bg: 'rgba(168,85,247,0.1)' },
+  display:   { color: 'var(--color-muted)', bg: 'rgba(124,135,152,0.1)' },
+  utility:   { color: 'var(--color-green)', bg: 'rgba(47,217,140,0.1)' },
 };
 
 function NodeCard({ node }: { node: AgentNode }) {
@@ -35,7 +35,6 @@ function NodeCard({ node }: { node: AgentNode }) {
     >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-        <span style={{ fontSize: '1rem' }}>{meta.icon}</span>
         <span
           style={{
             fontSize: '0.7rem',
@@ -279,7 +278,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ recommendations, isOpen,
         >
           <div>
             <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)' }}>
-              🤖 AI Agent Recommendations
+              AI Agent Recommendations
             </h2>
             <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.75rem', color: 'var(--color-muted)' }}>
               Workflows triggered upon anomaly detection
@@ -334,12 +333,25 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({ recommendations, isOpen,
                 justifyContent: 'center',
                 height: '100%',
                 gap: '0.75rem',
-                color: 'var(--color-muted)',
+                color: 'var(--color-text-dim)',
                 textAlign: 'center',
               }}
             >
-              <span style={{ fontSize: '2.5rem' }}>🤖</span>
-              <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5 }}>
+              <svg 
+                width="32" 
+                height="32" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="var(--color-border-hi)" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                <circle cx="12" cy="5" r="2"></circle>
+                <path d="M12 7v4M8 15h.01M16 15h.01"></path>
+              </svg>
+              <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5, color: 'var(--color-text-sub)' }}>
                 No recommendations for now.
                 <br />
                 AI analyses will appear here during anomalies.
