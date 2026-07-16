@@ -166,18 +166,18 @@ function App() {
           <Logo height={30} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
             <h1 style={{
-              margin: 0, fontSize: '0.95rem',
+              margin: 0, fontSize: '1rem',
               fontWeight: 700,
               fontFamily: 'var(--font-heading)',
-              letterSpacing: '0.04em',
-              textTransform: 'none',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
               color: 'var(--color-text)',
-              lineHeight: 1.1,
+              lineHeight: 1,
             }}>
-              Ener<span style={{ color: 'var(--color-cyan)' }}>Genius</span>
+              AMP<span style={{ color: 'var(--color-cyan)' }}>WATCH</span>
             </h1>
             <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-              {['Smart Energy', 'Smarter Decisions'].map(tag => (
+              {['Industry 4.0', 'Predictive Maintenance', 'Energy AI'].map(tag => (
                 <span key={tag} style={{
                   fontSize: '0.5rem', fontWeight: 600,
                   color: 'var(--color-text-dim)',
