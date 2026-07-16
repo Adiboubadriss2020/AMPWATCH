@@ -8,6 +8,7 @@ import { EventLog } from './components/EventLog';
 import { KPIPanel } from './components/KPIPanel';
 import { SimulationControl } from './components/SimulationControl';
 import { AgentPanel } from './components/AgentPanel';
+import { Logo } from './components/Logo';
 
 function App() {
   // State management
@@ -160,35 +161,23 @@ function App() {
     >
       {/* Header bar */}
       <header className="app-header">
-        <div className="header-brand">
-          {/* Logo mark with radial glow */}
-          <div style={{
-            width: '32px', height: '32px',
-            borderRadius: '8px',
-            backgroundColor: 'rgba(41,211,240,0.1)',
-            border: '1px solid rgba(41,211,240,0.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 16px rgba(41,211,240,0.25)',
-            flexShrink: 0,
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#29D3F0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-            </svg>
-          </div>
+        <div className="header-brand" style={{ gap: '0.6rem' }}>
+          {/* SVG Logo mark */}
+          <Logo height={30} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
             <h1 style={{
-              margin: 0, fontSize: '1rem',
+              margin: 0, fontSize: '0.95rem',
               fontWeight: 700,
               fontFamily: 'var(--font-heading)',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              textTransform: 'none',
               color: 'var(--color-text)',
-              lineHeight: 1,
+              lineHeight: 1.1,
             }}>
-              AMP<span style={{ color: 'var(--color-cyan)' }}>WATCH</span>
+              Ener<span style={{ color: 'var(--color-cyan)' }}>Genius</span>
             </h1>
             <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-              {['Industry 4.0', 'Predictive Maintenance', 'Energy AI'].map(tag => (
+              {['Smart Energy', 'Smarter Decisions'].map(tag => (
                 <span key={tag} style={{
                   fontSize: '0.5rem', fontWeight: 600,
                   color: 'var(--color-text-dim)',
