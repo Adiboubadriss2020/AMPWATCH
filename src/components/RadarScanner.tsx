@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatLabel } from '../formatLabel';
 
 interface RadarScannerProps {
   hasAnomaly: boolean;
@@ -100,7 +101,7 @@ export const RadarScanner: React.FC<RadarScannerProps> = ({ hasAnomaly, anomalyT
               fill="var(--color-red)"
               style={{ fontSize: '0.55rem', fontFamily: 'var(--font-mono)', fontWeight: 'bold' }}
             >
-              LOCK: {anomalyType}
+              LOCK: {formatLabel(anomalyType)}
             </text>
           </>
         )}

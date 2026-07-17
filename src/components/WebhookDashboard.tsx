@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { formatLabel } from '../formatLabel';
 
 interface WebhookPayloadRecord {
   receivedAt: string;
@@ -9,56 +10,56 @@ export const WebhookDashboard: React.FC = () => {
   const [records, setRecords] = useState<WebhookPayloadRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [backendStatus, setBackendStatus] = useState<'connecting' | 'ok' | 'error'>('connecting');
+  const [lastPoll, setLastPoll] = useState<string | null>(null);
 
-  // Set VITE_BACKEND_URL in Netlify env vars to point to the Render backend
+  // Polling our relay backend is safe — it never triggers the workflow
   const backendUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/payload`;
+  const POLL_INTERVAL_MS = 4000; // check for new payloads every 4s
 
-  const loadRecords = async (isFirstLoad = false) => {
+  const loadRecords = useCallback(async (isFirstLoad = false) => {
     try {
-      if (isFirstLoad) {
-        setLoading(true);
-      }
+      if (isFirstLoad) setLoading(true);
       setError(null);
-      // 204 = no payload stored yet, just skip silently
+
+      // 204 = relay server has no payload yet — workflow hasn't fired
       const response = await fetch(backendUrl);
+      setLastPoll(new Date().toLocaleTimeString());
+
       if (response.status === 204) {
+        setBackendStatus('ok'); // server is reachable, just no data yet
         return;
       }
       if (!response.ok) {
         throw new Error(`Relay backend error (${response.status})`);
       }
 
-      // Response shape: { receivedAt: string, payload: object }
+      setBackendStatus('ok');
+
+      // Response shape from server.cjs: { receivedAt: string, payload: object }
       const { receivedAt, payload: data } = await response.json();
 
       if (data && typeof data === 'object' && Object.keys(data).length > 0 && data.machineId) {
         setRecords((prev) => {
-          // Deduplicate by receivedAt timestamp from the relay server
-          const isDuplicate = prev.some(
-            (r) => r.receivedAt === receivedAt
-          );
-
-          if (isDuplicate) {
-            return prev;
-          }
-
-          // Prepend the new record, limit to last 50 entries
-          const updated = [{ receivedAt, payload: data }, ...prev];
-          return updated.slice(0, 50);
+          // Deduplicate: relay server uses its own receivedAt timestamp
+          if (prev.some((r) => r.receivedAt === receivedAt)) return prev;
+          return [{ receivedAt, payload: data }, ...prev].slice(0, 50);
         });
       }
     } catch (err: any) {
-      setError(err?.message ?? 'Failed to load webhook data');
+      setBackendStatus('error');
+      setError(err?.message ?? 'Cannot reach relay backend');
     } finally {
-      if (isFirstLoad) {
-        setLoading(false);
-      }
+      if (isFirstLoad) setLoading(false);
     }
-  };
+  }, [backendUrl]);
 
   useEffect(() => {
     loadRecords(true);
-  }, []);
+    // Poll the relay backend every 4s — safe, never triggers the workflow
+    const interval = window.setInterval(() => loadRecords(false), POLL_INTERVAL_MS);
+    return () => window.clearInterval(interval);
+  }, [loadRecords]);
 
   const latestRecord = records[0];
   const payload = latestRecord?.payload;
@@ -107,11 +108,24 @@ export const WebhookDashboard: React.FC = () => {
         </div>
         <div style={{ padding: '0.85rem 1.25rem', backgroundColor: 'var(--color-overlay)', border: '1px solid var(--color-hairline)', borderRadius: 'var(--r-lg)', flex: '1 1 200px' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--color-text-sub)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Connection Status</div>
-          <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-green)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.6rem' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-green)', display: 'inline-block', animation: 'pulse-badge 1.5s infinite' }} />
-            LISTENING
+          <div style={{ fontSize: '1rem', fontWeight: 700, color: backendStatus === 'ok' ? 'var(--color-green)' : backendStatus === 'error' ? 'var(--color-red)' : 'var(--color-amber)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.35rem' }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: backendStatus === 'ok' ? 'var(--color-green)' : backendStatus === 'error' ? 'var(--color-red)' : 'var(--color-amber)',
+              display: 'inline-block',
+              animation: 'pulse-badge 1.5s infinite'
+            }} />
+            {backendStatus === 'ok' ? 'CONNECTED' : backendStatus === 'error' ? 'OFFLINE' : 'CONNECTING'}
           </div>
+          {lastPoll && (
+            <div style={{ fontSize: '0.68rem', color: 'var(--color-text-dim)', marginTop: '0.25rem' }}>
+              Last poll: {lastPoll}
+            </div>
+          )}
         </div>
+        <div style={{ padding: '0.85rem 1.25rem', backgroundColor: 'var(--color-overlay)', border: '1px solid var(--color-hairline)', borderRadius: 'var(--r-lg)', flex: '1 1 100%' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--color-text-sub)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Relay Backend (Frontend reads from here)</div>
           <div style={{ fontSize: '0.82rem', color: 'var(--color-text)', wordBreak: 'break-all', fontFamily: 'var(--font-mono)' }}>
             {backendUrl}
@@ -177,7 +191,7 @@ export const WebhookDashboard: React.FC = () => {
                       border: `1px solid ${payload.isAnomaly ? 'var(--color-red)' : 'var(--color-green)'}`,
                     }}
                   >
-                    {payload.isAnomaly ? `ANOMALY: ${payload.anomalyType || 'GENERIC'}` : 'NOMINAL STATUS'}
+                    {payload.isAnomaly ? `ANOMALY: ${formatLabel(payload.anomalyType || 'GENERIC')}` : 'NOMINAL STATUS'}
                   </span>
 
                   {/* Severity Badge */}
@@ -194,7 +208,7 @@ export const WebhookDashboard: React.FC = () => {
                       border: `1px solid ${payload.severity === 'CRITIQUE' ? 'var(--color-red)' : payload.severity === 'ATTENTION' ? 'var(--color-amber)' : 'var(--color-cyan)'}`,
                     }}
                   >
-                    {payload.severity || 'NORMAL'}
+                    {formatLabel(payload.severity || 'NORMAL')}
                   </span>
                 </div>
               </div>
@@ -274,7 +288,7 @@ export const WebhookDashboard: React.FC = () => {
               {/* Footer info: Tariffs, CO2, and timestamps */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.72rem', color: 'var(--color-text-sub)', borderTop: '1px solid var(--color-hairline)', paddingTop: '0.75rem' }}>
                 <div>
-                  ⚡ Tranche: <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{payload.trancheHoraire}</span> ({payload.tarifKwh} DH/kWh)
+                  ⚡ Tranche: <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{formatLabel(payload.trancheHoraire)}</span> ({payload.tarifKwh} DH/kWh)
                 </div>
                 <div>
                   🌿 CO₂ Footprint: <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{payload.co2ParHeure} kg/h</span>

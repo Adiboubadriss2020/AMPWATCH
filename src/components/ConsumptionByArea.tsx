@@ -12,7 +12,7 @@ export const ConsumptionByArea: React.FC<ConsumptionByAreaProps> = ({ machines }
 
   return (
     <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', padding: '0.85rem' }}>
-      <span className="section-label">⚡ Energy Consumption by Machine</span>
+      <span className="section-label">⚡ Energy Consumption by Area</span>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
         {sorted.map((m) => {
@@ -29,7 +29,10 @@ export const ConsumptionByArea: React.FC<ConsumptionByAreaProps> = ({ machines }
                   {m.machineId} <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--color-text-dim)' }}>({m.machineName})</span>
                 </span>
                 <span className="mono" style={{ fontWeight: 700, color }}>
-                  {m.kw.toFixed(1)} kW <span style={{ fontSize: '0.65rem', color: 'var(--color-text-dim)' }}>({pct}%)</span>
+                  {m.kw.toFixed(1)} kW
+                  <span style={{ fontSize: '0.65rem', color: 'var(--color-text-dim)' }}>
+                    {' '}({pct}%) · {m.costPerHour.toFixed(2)} MAD/h · {m.deviation > 0 ? '+' : ''}{m.deviation}%
+                  </span>
                 </span>
               </div>
               

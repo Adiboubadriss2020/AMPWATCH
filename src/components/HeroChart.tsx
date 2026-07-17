@@ -1,6 +1,13 @@
 import React, { useRef, useEffect, useState } from 'react';
 import type { Reading, Machine } from '../types';
-import { Compressor3D } from './Compressor3D';
+import { formatLabel } from '../formatLabel';
+import {
+  IconPowerFactor,
+  IconPressure,
+  IconTelemetry,
+  IconTemp,
+  IconVoltage,
+} from './Icons';
 
 interface HeroChartProps {
   machine: Machine;
@@ -10,7 +17,8 @@ interface HeroChartProps {
 
 export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIndex }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 600, height: 220 });
+  // Keep the chart compact so the panel height matches `AnomalyAlert` (240–320px).
+  const [dimensions, setDimensions] = useState({ width: 600, height: 140 });
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   const {
@@ -23,7 +31,6 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
     humidite,
     pression,
     powerFactor,
-    costPerHour,
     anomalyType,
   } = machine;
 
@@ -31,7 +38,11 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
     if (!containerRef.current) return;
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setDimensions({ width: Math.max(300, entry.contentRect.width), height: 200 });
+        const width = Math.max(300, entry.contentRect.width);
+        // Scales with width but stays in a safe band for the compact layout.
+        const computedHeight = Math.round(width * 0.28);
+        const height = Math.max(110, Math.min(160, computedHeight));
+        setDimensions({ width, height });
       }
     });
     ro.observe(containerRef.current);
@@ -40,28 +51,47 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
 
   if (!series || series.length === 0) {
     return (
-      <div className="panel" style={{ height: '380px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-dim)' }}>
-        No telemetry data available
+      <div
+        className="panel"
+        style={{
+          minHeight: '240px',
+          maxHeight: '320px',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--color-text)',
+          overflow: 'hidden',
+        }}
+      >
+        No live data available
       </div>
     );
   }
 
   const { width, height } = dimensions;
-  const pad = { top: 20, right: 30, bottom: 30, left: 55 };
-  const plotW = width - pad.left - pad.right;
-  const plotH = height - pad.top - pad.bottom;
+  const pad = { top: 24, right: 36, bottom: 28, left: 55 };
+  const plotW = Math.max(1, width - pad.left - pad.right);
+  const plotH = Math.max(1, height - pad.top - pad.bottom);
 
   const baselineMin = Math.round(normalKw * 0.9);
   const baselineMax = Math.round(normalKw * 1.1);
 
-  const kwValues = series.map(d => d.kw);
-  const maxVal = Math.max(...kwValues);
-  const minVal = Math.min(...kwValues);
-  const yMax = Math.max(baselineMax * 1.35, maxVal * 1.05);
-  const yMin = Math.max(0, Math.min(baselineMin * 0.7, minVal * 0.95));
+  const kwValues = series.map((d) => d.kw);
+  const maxVal = Math.max(...kwValues, normalKw > 0 ? baselineMax : 0);
+  const minVal = Math.min(...kwValues, 0);
+  // Fit ALL live points + baseline with padding — avoid crushing new samples at the edge
+  const span = Math.max(1, maxVal - minVal);
+  const yPad = Math.max(span * 0.12, 2);
+  const yMax = maxVal + yPad;
+  const yMin = Math.max(0, minVal - yPad);
   const yRange = yMax - yMin || 1;
 
-  const getX = (i: number) => pad.left + (i / (series.length - 1)) * plotW;
+  const n = series.length;
+  const getX = (i: number) => {
+    if (n <= 1) return pad.left + plotW; // first sample sits at the live edge
+    return pad.left + (i / (n - 1)) * plotW;
+  };
   const getY = (v: number) => pad.top + plotH - ((v - yMin) / yRange) * plotH;
 
   const mkPath = (pts: Reading[], from: number, to: number): string => {
@@ -87,10 +117,20 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
   const redPath = hasAnomaly ? mkPath(series, anomalyIndex, series.length - 1) : '';
   const redArea = hasAnomaly ? mkArea(series, anomalyIndex, series.length - 1, bottomY) : '';
 
-  const ticks = [yMin, baselineMin, baselineMax, yMax].sort((a, b) => a - b)
-    .filter((t, i, arr) => i === 0 || t - arr[i - 1] > yRange * 0.08);
+  const ticks = [yMin, ...(normalKw > 0 ? [baselineMin, normalKw, baselineMax] : []), yMax]
+    .sort((a, b) => a - b)
+    .filter((t, i, arr) => i === 0 || Math.abs(t - arr[i - 1]) > yRange * 0.08);
 
-  const xLabelIndices = [0, Math.floor(series.length * 0.33), Math.floor(series.length * 0.66), series.length - 1];
+  // Unique indices only — short series used to produce [0,0,0,0] and React key collisions
+  const xLabelIndices = Array.from(
+    new Set(
+      [0, Math.floor((series.length - 1) * 0.33), Math.floor((series.length - 1) * 0.66), series.length - 1].filter(
+        (idx) => idx >= 0 && idx < series.length,
+      ),
+    ),
+  );
+
+  const normalLineY = getY(normalKw);
 
   // Latest data for floating tooltip
   const latestKw = series[series.length - 1]?.kw ?? 0;
@@ -109,61 +149,72 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
   const uniqueId = `hero-${machineId}`;
 
   return (
-    <div ref={containerRef} className="panel" style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+    <div
+      ref={containerRef}
+      className="panel panel--live widget-enter"
+      style={{
+        position: 'relative',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.6rem',
+        minHeight: '240px',
+        maxHeight: '320px',
+        height: '100%',
+        overflow: 'visible',
+      }}
+    >
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexGrow: 1 }}>
-          <div>
-            <div className="section-label">⚡ Live Telemetry</div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-heading)' }}>
-              <span style={{ color: statusColor }}>{machineId}</span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--color-text-sub)', fontWeight: 500 }}>({machineName})</span>
-            </h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div className="section-label">
+            <span className="widget-icon"><IconTelemetry size={14} /></span>
+            Live Power
           </div>
-          {/* Three.js 3D Viewport */}
-          <div style={{
-            width: '130px',
-            height: '62px',
-            backgroundColor: 'var(--color-bg-subtle)',
-            border: '1px solid var(--color-hairline)',
-            borderRadius: 'var(--r-md)',
-            position: 'relative',
-            overflow: 'hidden',
-          }}>
-            <Compressor3D status={machine.status} />
-            <div style={{
-              position: 'absolute', bottom: '2px', right: '4px',
-              fontSize: '0.45rem', color: 'var(--color-text-dim)',
-              fontFamily: 'var(--font-mono)', pointerEvents: 'none',
-              textTransform: 'uppercase', letterSpacing: '0.05em',
-            }}>
-              3D NODE
-            </div>
-          </div>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-heading)' }}>
+            <span style={{ color: statusColor }}>{machineId}</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-sub)', fontWeight: 600 }}>({machineName})</span>
+          </h2>
         </div>
-        <span style={{
-          fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-green)',
-          backgroundColor: 'var(--color-green-dim)', padding: '0.2rem 0.6rem',
-          borderRadius: '4px', border: '1px solid rgba(63,209,107,0.3)',
-          letterSpacing: '0.05em',
-        }}>
+        <span
+          className="ingest-badge"
+          style={{
+            fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-green)',
+            backgroundColor: 'var(--color-green-dim)', padding: '0.25rem 0.65rem',
+            borderRadius: '4px', border: '1px solid rgba(63,209,107,0.3)',
+            letterSpacing: '0.05em',
+          }}
+        >
           ● INGESTING
         </span>
       </div>
 
       {/* SVG Chart */}
       <div
-        style={{ position: 'relative', width: '100%', height: `${height}px` }}
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: `${height}px`,
+          flexShrink: 0,
+          overflow: 'visible',
+        }}
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           const mx = e.clientX - rect.left - pad.left;
-          const idx = Math.round((mx / plotW) * (series.length - 1));
+          const denom = Math.max(1, series.length - 1);
+          const idx = Math.round((mx / plotW) * denom);
           setHoverIdx(Math.max(0, Math.min(series.length - 1, idx)));
         }}
         onMouseLeave={() => setHoverIdx(null)}
       >
-        <svg width={width} height={height} style={{ overflow: 'visible', width: '100%', height: '100%' }}>
+        <svg
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="none"
+          style={{ overflow: 'visible', width: '100%', height: '100%', display: 'block' }}
+        >
           <defs>
             {/* Cyan gradient fill */}
             <linearGradient id={`${uniqueId}-grad-blue`} x1="0" y1="0" x2="0" y2="1">
@@ -179,7 +230,7 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
 
           {/* Horizontal grid */}
           {ticks.map((tick, i) => (
-            <line key={i}
+            <line key={`grid-${i}-${tick}`}
               x1={pad.left} y1={getY(tick)}
               x2={width - pad.right} y2={getY(tick)}
               stroke="var(--color-hairline)" strokeWidth={1} strokeDasharray="3 4"
@@ -202,25 +253,45 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
             />
           ))}
 
+          {/* Normal baseline line */}
+          <line
+            x1={pad.left}
+            y1={normalLineY}
+            x2={width - pad.right}
+            y2={normalLineY}
+            stroke="var(--color-green)"
+            strokeWidth={1.5}
+            strokeDasharray="5 4"
+          />
+          <text
+            x={width - pad.right - 8}
+            y={normalLineY - 8}
+            textAnchor="end"
+            fill="var(--color-green)"
+            style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}
+          >
+            Baseline
+          </text>
+
           {/* Y-axis labels */}
           {ticks.map((tick, i) => (
-            <text key={i}
+            <text key={`y-tick-${i}-${tick}`}
               x={pad.left - 8} y={getY(tick) + 4}
               textAnchor="end"
-              fill="var(--color-text-dim)"
-              style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)' }}
+              fill="var(--color-text)"
+              style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', fontWeight: 600 }}
             >
               {tick.toFixed(0)} kW
             </text>
           ))}
 
           {/* X-axis labels */}
-          {xLabelIndices.map((idx) => idx < series.length && (
-            <text key={idx}
+          {xLabelIndices.map((idx) => (
+            <text key={`x-label-${idx}`}
               x={getX(idx)} y={height - 6}
               textAnchor="middle"
-              fill="var(--color-text-dim)"
-              style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)' }}
+              fill="var(--color-text)"
+              style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', fontWeight: 600 }}
             >
               {series[idx].t}
             </text>
@@ -284,12 +355,12 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
           pointerEvents: 'none',
           boxShadow: 'var(--glow-cyan)',
         }}>
-          <div style={{ fontSize: '0.6rem', color: 'var(--color-text-dim)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <div style={{ fontSize: '0.68rem', color: 'var(--color-text)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             {hoverIdx !== null ? hovPt?.t : 'Current'}
           </div>
-          <div className="mono" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-cyan)' }}>
+          <div className="mono" style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-cyan)' }}>
             {(hoverIdx !== null ? hovPt!.kw : latestKw).toFixed(1)}
-            <span style={{ fontSize: '0.65rem', color: 'var(--color-text-sub)', fontWeight: 500 }}> kW</span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--color-text-sub)', fontWeight: 600 }}> kW</span>
           </div>
         </div>
 
@@ -302,7 +373,7 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
               backdropFilter: 'blur(12px)',
             }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.2rem' }}>
-              <span style={{ color: 'var(--color-red)', fontSize: '0.75rem', fontWeight: 700 }}>⚠ {anomalyType}</span>
+              <span style={{ color: 'var(--color-red)', fontSize: '0.75rem', fontWeight: 700 }}>⚠ {formatLabel(anomalyType)}</span>
             </div>
             <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--color-text)', lineHeight: 1.35 }}>
               {machineId} — {machine.cause || 'Anomaly detected'}
@@ -311,32 +382,20 @@ export const HeroChart: React.FC<HeroChartProps> = ({ machine, series, anomalyIn
         )}
       </div>
 
-      {/* Telemetry metrics strip */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-        gap: '0.5rem',
-        paddingTop: '0.75rem',
-        borderTop: '1px solid var(--color-hairline)',
-      }}>
+      {/* Live electrical + environment sensors (economics live in Asset Health) */}
+      <div className="hero-sensor-grid">
         {[
-          { label: 'Voltage / Current', value: `${voltage} V / ${current} A`, color: 'var(--color-cyan)' },
-          { label: 'Power Factor',      value: `${powerFactor.toFixed(2)} cos φ`,  color: 'var(--color-text)' },
-          { label: 'Temp / Humidity',   value: `${temp} °C / ${humidite} %`,       color: temp > 60 ? 'var(--color-red)' : 'var(--color-text)' },
-          { label: 'Pressure',          value: `${pression.toFixed(1)} hPa`,        color: 'var(--color-text)' },
-          { label: 'Cost / Hour',       value: `${costPerHour.toFixed(2)} MAD/h`,   color: 'var(--color-green)' },
-        ].map(({ label, value, color }) => (
-          <div key={label} style={{
-            display: 'flex', flexDirection: 'column',
-            padding: '0.45rem 0.6rem',
-            backgroundColor: 'var(--color-overlay)',
-            borderRadius: '6px',
-            border: '1px solid var(--color-hairline)',
-          }}>
-            <span style={{ fontSize: '0.6rem', color: 'var(--color-text-dim)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          { label: 'Voltage / Current', value: `${voltage} V / ${current} A`, color: 'var(--color-cyan)', icon: <IconVoltage size={13} /> },
+          { label: 'Power Factor', value: `${powerFactor.toFixed(2)} cos φ`, color: 'var(--color-text)', icon: <IconPowerFactor size={13} /> },
+          { label: 'Temp / Humidity', value: `${temp} °C / ${humidite} %`, color: temp > 60 ? 'var(--color-red)' : 'var(--color-text)', icon: <IconTemp size={13} /> },
+          { label: 'Pressure', value: `${pression.toFixed(1)} hPa`, color: 'var(--color-text)', icon: <IconPressure size={13} /> },
+        ].map(({ label, value, color, icon }) => (
+          <div key={label} className="hero-sensor-tile">
+            <span className="hero-sensor-label" style={{ color: 'var(--color-text-sub)' }}>
+              <span className="widget-icon" style={{ color }}>{icon}</span>
               {label}
             </span>
-            <span className="mono" style={{ fontSize: '0.82rem', fontWeight: 600, color, marginTop: '0.15rem' }}>
+            <span className="mono hero-sensor-value" style={{ color }}>
               {value}
             </span>
           </div>

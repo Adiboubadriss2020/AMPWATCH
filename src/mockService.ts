@@ -151,7 +151,8 @@ class TelemetrySimulator {
     const heure = now.getHours();
 
     this.machines = MACHINE_TEMPLATES.map((tmpl) => {
-      const kw       = Math.round(tmpl.normalKw * (0.95 + Math.random() * 0.1) * 10) / 10;
+      const forceAnomaly = Math.random() < 0.25;
+      const kw = forceAnomaly ? 72 : 8;
       const voltage  = 380 + Math.round((Math.random() * 6 - 3) * 10) / 10;
       const pf       = 0.85 + Math.random() * 0.08;
       const current  = Math.round((kw * 1000) / (voltage * 1.732 * pf) * 10) / 10;
@@ -170,6 +171,8 @@ class TelemetrySimulator {
       }
       this.histories.set(tmpl.machineId, historyList);
 
+      const initialStatus = severityToStatus(computed.severity ?? 'NORMAL');
+
       return {
         machineId: tmpl.machineId,
         machineName: tmpl.machineName,
@@ -181,11 +184,11 @@ class TelemetrySimulator {
         powerFactor: Math.round(pf * 100) / 100,
         pression,
         scenario: tmpl.scenario,
-        status: 'NOMINAL' as MachineStatus,
-        anomaly: false,
-        cause: undefined,
+        status: initialStatus,
+        anomaly: initialStatus !== 'NOMINAL',
+        cause: initialStatus !== 'NOMINAL' ? tmpl.cause : undefined,
         wifi_rssi: -60 + Math.round(Math.random() * 10),
-        relay: false,
+        relay: initialStatus !== 'NOMINAL',
         cooldown_remaining: null,
         ...computed,
       };
@@ -240,11 +243,10 @@ class TelemetrySimulator {
       const statusToUse = machine.forcedStatus !== undefined ? machine.forcedStatus : machine.status;
 
       if (statusToUse === 'NOMINAL' || statusToUse === null) {
-        kw = Math.round(machine.normalKw * (0.95 + Math.random() * 0.1) * 10) / 10;
+        kw = 8;
         this.nominalSeconds += 1.5;
       } else {
-        const mult = statusToUse === 'CRITIQUE' ? 1.55 : 1.25;
-        kw = Math.round((machine.normalKw * mult + Math.random() * 4) * 10) / 10;
+        kw = 72;
         const devKwh = kw - machine.normalKw;
         this.accumulatedCoutEvite += (devKwh * (1.5 / 3600)) * 0.15;
       }
@@ -264,9 +266,10 @@ class TelemetrySimulator {
       // CO₂ cumulé
       this.accumulatedCo2Saved += (computed.co2Economise ?? 0) * (1.5 / 3600);
 
-      // Determine final status
-      const newStatus = statusToUse !== undefined && statusToUse !== null 
-        ? statusToUse 
+      // Determine final status from forced override or the computed anomaly severity
+      const hasForcedStatus = machine.forcedStatus !== undefined && machine.forcedStatus !== null;
+      const newStatus = hasForcedStatus
+        ? machine.forcedStatus as MachineStatus
         : severityToStatus(computed.severity ?? 'NORMAL');
 
       // Transition NOMINAL → anomalie → émettre alerte
